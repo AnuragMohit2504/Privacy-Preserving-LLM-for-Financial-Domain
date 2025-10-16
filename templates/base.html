@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="FINGPT - Privacy-Preserving AI Financial Assistant" />
+    <meta name="theme-color" content="#0d1117" />
+    
+    <title>{% block title %}FINGPT - Financial Intelligence{% endblock %}</title>
+
+    <!-- Favicon -->
+    <link rel="icon" href="{{ url_for('static', filename='assets/favicon.png') }}" type="image/png" />
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#e6fff9',
+                            100: '#b3ffe8',
+                            200: '#80ffd7',
+                            300: '#4dffc6',
+                            400: '#1affb5',
+                            500: '#00e6a1',
+                            600: '#00b37e',
+                            700: '#00805b',
+                            800: '#004d38',
+                            900: '#001a15'
+                        },
+                        dark: {
+                            bg: '#0a0e13',
+                            panel: '#0f1419',
+                            elevated: '#161b22',
+                            hover: '#1c2128',
+                            border: '#21262d'
+                        }
+                    },
+                    animation: {
+                        'gradient': 'gradient 8s linear infinite',
+                        'float': 'float 6s ease-in-out infinite',
+                        'glow': 'glow 2s ease-in-out infinite alternate',
+                        'slide-up': 'slideUp 0.5s ease-out',
+                        'fade-in': 'fadeIn 0.6s ease-out',
+                        'bounce-slow': 'bounce 3s infinite'
+                    },
+                    keyframes: {
+                        gradient: {
+                            '0%, 100%': { backgroundPosition: '0% 50%' },
+                            '50%': { backgroundPosition: '100% 50%' }
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-20px)' }
+                        },
+                        glow: {
+                            '0%': { boxShadow: '0 0 20px rgba(0, 230, 161, 0.2)' },
+                            '100%': { boxShadow: '0 0 40px rgba(0, 230, 161, 0.6)' }
+                        },
+                        slideUp: {
+                            '0%': { opacity: '0', transform: 'translateY(30px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' }
+                        },
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' }
+                        }
+                    },
+                    backgroundSize: {
+                        '200': '200% 200%'
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+    
+    <!-- Plotly -->
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    
+    <style>
+        /* Glassmorphism & Advanced Effects */
+        .glass {
+            background: rgba(22, 27, 34, 0.7);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .glass-card {
+            background: linear-gradient(135deg, rgba(22, 27, 34, 0.8) 0%, rgba(15, 20, 25, 0.9) 100%);
+            backdrop-filter: blur(30px);
+            border: 1px solid rgba(0, 230, 161, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+        
+        .gradient-border {
+            position: relative;
+            background: linear-gradient(135deg, #0f1419 0%, #161b22 100%);
+        }
+        
+        .gradient-border::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            padding: 2px;
+            background: linear-gradient(135deg, #00e6a1, #00b3ff);
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+        }
+        
+        .animate-gradient {
+            background: linear-gradient(270deg, #00e6a1, #00b3ff, #9333ea, #00e6a1);
+            background-size: 800% 800%;
+            animation: gradient 15s ease infinite;
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #0a0e13;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, #00e6a1, #00b3ff);
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, #00b3ff, #9333ea);
+        }
+        
+        /* Smooth transitions */
+        * {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+    </style>
+    
+    {% block extra_head %}{% endblock %}
+</head>
+
+<body class="bg-dark-bg text-gray-100 font-['Inter'] min-h-screen antialiased overflow-x-hidden">
+    
+    <!-- Animated Background -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none">
+        <div class="absolute top-0 -left-4 w-72 h-72 bg-primary-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-float"></div>
+        <div class="absolute top-0 -right-4 w-72 h-72 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-float" style="animation-delay: 2s;"></div>
+        <div class="absolute -bottom-8 left-20 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-float" style="animation-delay: 4s;"></div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="relative z-10">
+        <!-- Header -->
+        <header class="glass sticky top-0 z-50 border-b border-dark-border shadow-2xl">
+            <div class="container mx-auto flex justify-between items-center px-6 py-4">
+                <!-- Logo -->
+                <div class="flex items-center space-x-4 group">
+                    <div class="relative">
+                        <div class="absolute inset-0 bg-gradient-to-r from-primary-500 to-blue-500 rounded-2xl blur-lg opacity-75 group-hover:opacity-100 transition-opacity"></div>
+                        <div class="relative w-12 h-12 bg-gradient-to-br from-primary-500 to-blue-500 rounded-2xl flex items-center justify-center shadow-lg transform hover:scale-110 hover:rotate-6 transition-all">
+                            <i class="fas fa-brain text-dark-bg text-xl"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-black bg-gradient-to-r from-primary-400 via-blue-400 to-purple-400 bg-clip-text text-transparent">
+                            {{ project_name }}
+                        </h1>
+                        <p class="text-xs text-gray-400 font-semibold tracking-wider">FINANCIAL INTELLIGENCE</p>
+                    </div>
+                </div>
+                
+                <!-- Navigation -->
+                <nav class="flex items-center space-x-6">
+                    {% if current_user.is_authenticated %}
+                        <a href="{{ url_for('dashboard') }}" class="text-gray-300 hover:text-primary-400 transition-colors flex items-center gap-2 group">
+                            <i class="fas fa-dashboard group-hover:rotate-12 transition-transform"></i>
+                            <span class="hidden md:inline font-semibold">Dashboard</span>
+                        </a>
+                        
+                        <div class="relative group">
+                            <button class="flex items-center gap-3 text-gray-300 hover:text-primary-400 transition-colors px-4 py-2 rounded-xl hover:bg-dark-elevated">
+                                <div class="relative">
+                                    <div class="absolute inset-0 bg-gradient-to-r from-primary-500 to-blue-500 rounded-full blur-md opacity-75"></div>
+                                    <div class="relative w-10 h-10 bg-gradient-to-br from-primary-500 to-blue-500 rounded-full flex items-center justify-center font-bold text-sm shadow-lg">
+                                        {{ current_user.name[0].upper() }}
+                                    </div>
+                                </div>
+                                <span class="hidden md:inline font-semibold">{{ current_user.name }}</span>
+                                <i class="fas fa-chevron-down text-xs group-hover:rotate-180 transition-transform"></i>
+                            </button>
+                            
+                            <!-- Dropdown -->
+                            <div class="absolute right-0 mt-3 w-56 glass-card rounded-2xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transform group-hover:translate-y-0 translate-y-2 transition-all">
+                                <div class="p-4 border-b border-dark-border">
+                                    <p class="text-sm font-semibold text-gray-200">{{ current_user.name }}</p>
+                                    <p class="text-xs text-gray-400">{{ current_user.email }}</p>
+                                </div>
+                                <a href="{{ url_for('logout') }}" class="flex items-center gap-3 px-4 py-3 text-gray-300 hover:bg-dark-hover hover:text-red-400 transition-colors">
+                                    <i class="fas fa-sign-out-alt"></i>
+                                    <span class="font-semibold">Logout</span>
+                                </a>
+                            </div>
+                        </div>
+                    {% else %}
+                        <a href="{{ url_for('login') }}" class="text-gray-300 hover:text-primary-400 transition-colors font-semibold">
+                            <i class="fas fa-sign-in-alt mr-2"></i>Login
+                        </a>
+                        <a href="{{ url_for('signup') }}" class="bg-gradient-to-r from-primary-500 to-blue-500 text-dark-bg px-6 py-2.5 rounded-xl font-bold hover:shadow-lg hover:shadow-primary-500/50 transform hover:scale-105 transition-all">
+                            Get Started
+                        </a>
+                    {% endif %}
+                </nav>
+            </div>
+        </header>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="container mx-auto mt-6 px-6 space-y-3">
+              {% for category, msg in messages %}
+                <div class="flash-message glass-card p-4 rounded-2xl text-sm font-semibold flex items-center gap-3 animate-slide-up shadow-xl
+                            {% if category=='success' %}border-l-4 border-green-500
+                            {% elif category=='danger' %}border-l-4 border-red-500
+                            {% elif category=='warning' %}border-l-4 border-yellow-500
+                            {% else %}border-l-4 border-blue-500{% endif %}">
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center
+                                {% if category=='success' %}bg-green-500/20 text-green-400
+                                {% elif category=='danger' %}bg-red-500/20 text-red-400
+                                {% elif category=='warning' %}bg-yellow-500/20 text-yellow-400
+                                {% else %}bg-blue-500/20 text-blue-400{% endif %}">
+                        <i class="fas fa-
+                            {% if category=='success' %}check-circle
+                            {% elif category=='danger' %}exclamation-triangle
+                            {% elif category=='warning' %}exclamation-circle
+                            {% else %}info-circle{% endif %}"></i>
+                    </div>
+                    <span class="flex-1 text-gray-200">{{ msg }}</span>
+                    <button onclick="this.parentElement.remove()" class="text-gray-400 hover:text-gray-200 transition-colors">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        <!-- Main Content -->
+        <main class="min-h-[calc(100vh-12rem)]">
+            {% block content %}{% endblock %}
+        </main>
+
+        <!-- Footer -->
+        <footer class="glass border-t border-dark-border mt-16">
+            <div class="container mx-auto px-6 py-8">
+                <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                    <div class="text-center md:text-left">
+                        <p class="text-sm text-gray-300 font-semibold">
+                            <i class="fas fa-shield-halved text-primary-400 mr-2"></i>
+                            &copy; 2025 FINGPT | Privacy-First Financial Intelligence
+                        </p>
+                        <p class="text-xs text-gray-500 mt-1">
+                            End-to-end encrypted. Your data never leaves your control.
+                        </p>
+                    </div>
+                    <div class="flex items-center gap-4 text-xs text-gray-400">
+                        <a href="#" class="hover:text-primary-400 transition-colors">Privacy Policy</a>
+                        <span>•</span>
+                        <a href="#" class="hover:text-primary-400 transition-colors">Terms</a>
+                        <span>•</span>
+                        <a href="#" class="hover:text-primary-400 transition-colors">Support</a>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Scripts -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

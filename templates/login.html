@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+{% block title %}Login - FINGPT{% endblock %}
+
+{% block content %}
+<div class="min-h-[calc(100vh-12rem)] flex items-center justify-center px-4 py-12 relative">
+    <!-- Animated background elements -->
+    <div class="absolute inset-0 overflow-hidden pointer-events-none">
+        <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-primary-500/10 rounded-full blur-3xl animate-float"></div>
+        <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-float" style="animation-delay: 2s;"></div>
+    </div>
+
+    <div class="max-w-md w-full relative z-10">
+        <!-- Login Card -->
+        <div class="glass-card rounded-3xl p-10 shadow-2xl transform hover:scale-[1.02] transition-transform">
+            <!-- Header -->
+            <div class="text-center mb-8">
+                <div class="relative inline-block mb-6">
+                    <div class="absolute inset-0 bg-gradient-to-r from-primary-500 to-blue-500 rounded-3xl blur-2xl opacity-50 animate-pulse"></div>
+                    <div class="relative w-20 h-20 bg-gradient-to-br from-primary-500 via-blue-500 to-purple-500 rounded-3xl flex items-center justify-center shadow-2xl animate-glow">
+                        <i class="fas fa-shield-halved text-4xl text-white"></i>
+                    </div>
+                </div>
+                <h2 class="text-4xl font-black bg-gradient-to-r from-primary-400 via-blue-400 to-purple-400 bg-clip-text text-transparent mb-3 animate-gradient bg-200">
+                    Welcome Back
+                </h2>
+                <p class="text-gray-400 text-lg">Sign in to your financial command center</p>
+            </div>
+
+            <!-- Login Form -->
+            <form action="{{ url_for('login') }}" method="POST" class="space-y-6">
+                <!-- Email Field -->
+                <div class="group">
+                    <label for="email" class="block text-sm font-bold text-gray-300 mb-3 flex items-center gap-2">
+                        <i class="fas fa-envelope text-primary-400"></i>
+                        Email Address
+                    </label>
+                    <div class="relative">
+                        <input 
+                            type="email" 
+                            id="email" 
+                            name="email" 
+                            placeholder="you@example.com"
+                            class="w-full px-5 py-4 rounded-xl bg-dark-elevated border-2 border-dark-border text-gray-100 
+                                   placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent 
+                                   transition-all group-hover:border-primary-500/30"
+                            required
+                            autocomplete="email"
+                        />
+                        <div class="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500">
+                            <i class="fas fa-at"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Password Field -->
+                <div class="group">
+                    <label for="password" class="block text-sm font-bold text-gray-300 mb-3 flex items-center gap-2">
+                        <i class="fas fa-lock text-primary-400"></i>
+                        Password
+                    </label>
+                    <div class="relative">
+                        <input 
+                            type="password" 
+                            id="password" 
+                            name="password" 
+                            placeholder="••••••••"
+                            class="w-full px-5 py-4 rounded-xl bg-dark-elevated border-2 border-dark-border text-gray-100 
+                                   placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent 
+                                   transition-all group-hover:border-primary-500/30"
+                            required
+                            autocomplete="current-password"
+                        />
+                        <button type="button" onclick="togglePassword()" class="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-primary-400 transition-colors">
+                            <i id="toggleIcon" class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Remember Me & Forgot Password -->
+                <div class="flex items-center justify-between">
+                    <label class="flex items-center gap-3 cursor-pointer group">
+                        <input type="checkbox" name="remember" class="w-5 h-5 rounded-lg border-2 border-dark-border bg-dark-elevated text-primary-500 focus:ring-2 focus:ring-primary-500 transition-all">
+                        <span class="text-sm text-gray-400 group-hover:text-primary-400 transition-colors font-semibold">Remember me</span>
+                    </label>
+                    <a href="#" class="text-sm text-primary-400 hover:text-primary-300 transition-colors font-semibold hover:underline">
+                        Forgot password?
+                    </a>
+                </div>
+
+                <!-- Submit Button -->
+                <button 
+                    type="submit" 
+                    class="w-full py-4 bg-gradient-to-r from-primary-500 via-blue-500 to-purple-500 text-white font-bold text-lg rounded-xl 
+                           hover:shadow-2xl hover:shadow-primary-500/50 transform hover:scale-[1.02] active:scale-95 transition-all duration-200
+                           flex items-center justify-center gap-3 relative overflow-hidden group">
+                    <span class="relative z-10 flex items-center gap-3">
+                        <i class="fas fa-sign-in-alt group-hover:translate-x-1 transition-transform"></i>
+                        Sign In
+                    </span>
+                    <div class="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                </button>
+            </form>
+
+            <!-- Divider -->
+            <div class="relative my-8">
+                <div class="absolute inset-0 flex items-center">
+                    <div class="w-full border-t border-dark-border"></div>
+                </div>
+                <div class="relative flex justify-center text-sm">
+                    <span class="px-4 bg-dark-panel text-gray-500 font-semibold">OR</span>
+                </div>
+            </div>
+
+            <!-- Demo Account -->
+            <div class="glass rounded-2xl p-5 border-2 border-blue-500/30 relative overflow-hidden group cursor-pointer hover:border-blue-500/60 transition-all">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl group-hover:scale-150 transition-transform"></div>
+                <div class="relative z-10">
+                    <div class="flex items-start gap-3">
+                        <div class="w-10 h-10 bg-blue-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-info-circle text-blue-400 text-lg"></i>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-sm font-bold text-blue-400 mb-2">Try Demo Account</p>
+                            <div class="text-xs space-y-1 font-mono">
+                                <p class="text-gray-400"><span class="text-gray-500">Email:</span> <span class="text-primary-400">demo@fingpt.ai</span></p>
+                                <p class="text-gray-400"><span class="text-gray-500">Pass:</span> <span class="text-primary-400">demo123</span></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sign Up Link -->
+            <div class="mt-8 text-center">
+                <p class="text-gray-400">
+                    Don't have an account?
+                    <a href="{{ url_for('signup') }}" class="text-primary-400 hover:text-primary-300 font-bold hover:underline transition-colors ml-1">
+                        Create one now →
+                    </a>
+                </p>
+            </div>
+        </div>
+
+        <!-- Trust Badges -->
+        <div class="mt-8 flex justify-center items-center gap-8 text-gray-500 text-xs">
+            <div class="flex items-center gap-2 group cursor-pointer">
+                <i class="fas fa-shield-check text-lg text-primary-400 group-hover:scale-110 transition-transform"></i>
+                <span class="font-semibold group-hover:text-primary-400 transition-colors">SSL Encrypted</span>
+            </div>
+            <div class="w-1 h-1 bg-gray-600 rounded-full"></div>
+            <div class="flex items-center gap-2 group cursor-pointer">
+                <i class="fas fa-user-shield text-lg text-blue-400 group-hover:scale-110 transition-transform"></i>
+                <span class="font-semibold group-hover:text-blue-400 transition-colors">GDPR Compliant</span>
+            </div>
+            <div class="w-1 h-1 bg-gray-600 rounded-full"></div>
+            <div class="flex items-center gap-2 group cursor-pointer">
+                <i class="fas fa-server text-lg text-green-400 group-hover:scale-110 transition-transform"></i>
+                <span class="font-semibold group-hover:text-green-400 transition-colors">99.9% Uptime</span>
+            </div>
+        </div>
+
+        <!-- Security Note -->
+        <div class="mt-6 text-center">
+            <p class="text-xs text-gray-600 flex items-center justify-center gap-2">
+                <i class="fas fa-lock"></i>
+                Your data is encrypted end-to-end and never shared
+            </p>
+        </div>
+    </div>
+</div>
+
+<script>
+    function togglePassword() {
+        const passwordField = document.getElementById('password');
+        const toggleIcon = document.getElementById('toggleIcon');
+        
+        if (passwordField.type === 'password') {
+            passwordField.type = 'text';
+            toggleIcon.classList.remove('fa-eye');
+            toggleIcon.classList.add('fa-eye-slash');
+        } else {
+            passwordField.type = 'password';
+            toggleIcon.classList.remove('fa-eye-slash');
+            toggleIcon.classList.add('fa-eye');
+        }
+    }
+
+    // Form validation
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+        
+        if (!email || !password) {
+            e.preventDefault();
+            alert('⚠️ Please fill in all fields');
+            return false;
+        }
+        
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            e.preventDefault();
+            alert('⚠️ Please enter a valid email address');
+            return false;
+        }
+    });
+
+    // Animate on load
+    document.addEventListener('DOMContentLoaded', () => {
+        const card = document.querySelector('.glass-card');
+        card.style.opacity = '0';
+        card.style.transform = 'scale(0.95) translateY(20px)';
+        setTimeout(() => {
+            card.style.transition = 'all 0.8s cubic-bezier(0.4, 0, 0.2, 1)';
+            card.style.opacity = '1';
+            card.style.transform = 'scale(1) translateY(0)';
+        }, 100);
+    });
+</script>
+{% endblock %}

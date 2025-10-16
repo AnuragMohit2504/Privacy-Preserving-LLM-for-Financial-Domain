@@ -1,0 +1,263 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - {{ project_name }}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-6 py-8">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <!-- LEFT COLUMN (2/3) -->
+        <div class="lg:col-span-2 space-y-8">
+            
+            <!-- Welcome Hero -->
+            <div class="glass-card rounded-3xl p-8 relative overflow-hidden group hover:scale-[1.02] transition-transform">
+                <div class="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-primary-500/20 to-blue-500/20 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700"></div>
+                <div class="relative z-10">
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="w-16 h-16 bg-gradient-to-br from-primary-500 to-blue-500 rounded-2xl flex items-center justify-center shadow-2xl animate-bounce-slow">
+                            <i class="fas fa-rocket text-3xl text-white"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-3xl font-black bg-gradient-to-r from-primary-400 to-blue-400 bg-clip-text text-transparent">
+                                Welcome back, {{ user_name }}!
+                            </h2>
+                            <p class="text-gray-400 mt-1">Your AI-powered financial command center</p>
+                        </div>
+                    </div>
+                    <p class="text-gray-300 text-lg leading-relaxed">
+                        Upload your financial documents, analyze transactions, and get instant AI-powered insights. 
+                        <span class="text-primary-400 font-semibold">100% private & secure.</span>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="grid grid-cols-3 gap-4">
+                <div class="glass-card rounded-2xl p-6 hover:scale-105 transition-transform cursor-pointer group">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <i class="fas fa-file-upload text-green-400 text-xl"></i>
+                        </div>
+                        <span class="text-2xl font-bold text-green-400">0</span>
+                    </div>
+                    <p class="text-gray-400 text-sm font-semibold">Files Uploaded</p>
+                </div>
+                
+                <div class="glass-card rounded-2xl p-6 hover:scale-105 transition-transform cursor-pointer group">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <i class="fas fa-chart-line text-blue-400 text-xl"></i>
+                        </div>
+                        <span class="text-2xl font-bold text-blue-400">0</span>
+                    </div>
+                    <p class="text-gray-400 text-sm font-semibold">Analyses Run</p>
+                </div>
+                
+                <div class="glass-card rounded-2xl p-6 hover:scale-105 transition-transform cursor-pointer group">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <i class="fas fa-comments text-purple-400 text-xl"></i>
+                        </div>
+                        <span class="text-2xl font-bold text-purple-400">0</span>
+                    </div>
+                    <p class="text-gray-400 text-sm font-semibold">AI Chats</p>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="glass-card rounded-3xl p-8">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-2xl font-bold text-gray-100 flex items-center gap-3">
+                        <i class="fas fa-bolt text-yellow-400"></i>
+                        Quick Actions
+                    </h3>
+                    <span class="text-xs text-gray-500 font-semibold uppercase tracking-wider">Fast Access</span>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <button onclick="document.getElementById('fileInput').click()" class="gradient-border rounded-2xl p-6 hover:scale-105 transition-all group">
+                        <div class="flex flex-col items-center text-center gap-3">
+                            <div class="w-16 h-16 bg-gradient-to-br from-primary-500 to-blue-500 rounded-2xl flex items-center justify-center group-hover:rotate-12 transition-transform">
+                                <i class="fas fa-cloud-upload-alt text-2xl text-white"></i>
+                            </div>
+                            <div>
+                                <p class="font-bold text-gray-100">Upload File</p>
+                                <p class="text-xs text-gray-400 mt-1">CSV, PDF, Excel</p>
+                            </div>
+                        </div>
+                    </button>
+                    
+                    <button onclick="startAnalysis('Bank Statement')" class="gradient-border rounded-2xl p-6 hover:scale-105 transition-all group">
+                        <div class="flex flex-col items-center text-center gap-3">
+                            <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center group-hover:rotate-12 transition-transform">
+                                <i class="fas fa-university text-2xl text-white"></i>
+                            </div>
+                            <div>
+                                <p class="font-bold text-gray-100">Bank Analysis</p>
+                                <p class="text-xs text-gray-400 mt-1">Transactions</p>
+                            </div>
+                        </div>
+                    </button>
+                    
+                    <button onclick="startAnalysis('Payslip')" class="gradient-border rounded-2xl p-6 hover:scale-105 transition-all group">
+                        <div class="flex flex-col items-center text-center gap-3">
+                            <div class="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center group-hover:rotate-12 transition-transform">
+                                <i class="fas fa-money-bill-wave text-2xl text-white"></i>
+                            </div>
+                            <div>
+                                <p class="font-bold text-gray-100">Payslip Review</p>
+                                <p class="text-xs text-gray-400 mt-1">Salary Details</p>
+                            </div>
+                        </div>
+                    </button>
+                    
+                    <button onclick="openVisualization()" class="gradient-border rounded-2xl p-6 hover:scale-105 transition-all group">
+                        <div class="flex flex-col items-center text-center gap-3">
+                            <div class="w-16 h-16 bg-gradient-to-br from-green-500 to-teal-500 rounded-2xl flex items-center justify-center group-hover:rotate-12 transition-transform">
+                                <i class="fas fa-chart-pie text-2xl text-white"></i>
+                            </div>
+                            <div>
+                                <p class="font-bold text-gray-100">Visualization</p>
+                                <p class="text-xs text-gray-400 mt-1">Charts & Graphs</p>
+                            </div>
+                        </div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Visualization Area -->
+            <div id="visualPreview" class="glass-card rounded-3xl p-8 hidden animate-slide-up">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-2xl font-bold text-gray-100 flex items-center gap-3">
+                        <i class="fas fa-chart-area text-primary-400"></i>
+                        Financial Insights
+                    </h3>
+                    <button onclick="document.getElementById('visualPreview').classList.add('hidden')" class="text-gray-400 hover:text-red-400 transition-colors">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                <div id="vizArea" class="min-h-[300px]">
+                    <div class="flex items-center justify-center h-64 text-gray-500">
+                        <div class="text-center">
+                            <i class="fas fa-chart-line text-6xl mb-4 opacity-20"></i>
+                            <p>Visualization will appear here</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN (1/3) - AI Chat -->
+        <div class="lg:col-span-1">
+            <div class="glass-card rounded-3xl p-6 sticky top-24 max-h-[calc(100vh-8rem)] flex flex-col">
+                <div class="flex items-center justify-between mb-6 pb-4 border-b border-dark-border">
+                    <h3 class="text-xl font-bold text-gray-100 flex items-center gap-2">
+                        <div class="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+                        AI Assistant
+                    </h3>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs text-gray-500 font-semibold">GPT-4</span>
+                        <div class="w-8 h-8 bg-gradient-to-br from-primary-500 to-blue-500 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-robot text-sm"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Messages -->
+                <div id="messages" class="flex-1 overflow-y-auto space-y-4 mb-4 pr-2" style="max-height: 400px;">
+                    <div class="flex gap-3 animate-fade-in">
+                        <div class="w-8 h-8 bg-gradient-to-br from-primary-500 to-blue-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-robot text-sm"></i>
+                        </div>
+                        <div class="flex-1 bg-dark-elevated rounded-2xl rounded-tl-none p-4">
+                            <p class="text-sm text-gray-300 leading-relaxed">
+                                👋 Hello! I'm your <span class="text-primary-400 font-semibold">FINGPT AI</span> assistant. 
+                                Upload your financial documents and I'll help you analyze them instantly!
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Input Area -->
+                <div class="space-y-3">
+                    <!-- File Upload -->
+                    <div class="flex items-center gap-2">
+                        <input id="fileInput" type="file" accept=".csv,.pdf,.xlsx,.xls" hidden />
+                        <button id="attachBtn" class="flex-shrink-0 w-10 h-10 bg-dark-elevated hover:bg-dark-hover rounded-xl flex items-center justify-center group transition-colors">
+                            <i class="fas fa-paperclip text-gray-400 group-hover:text-primary-400 transition-colors"></i>
+                        </button>
+                        <div class="flex-1 text-xs text-gray-500">
+                            <span class="font-semibold">Drag & drop</span> or click to upload
+                        </div>
+                    </div>
+
+                    <!-- Message Input -->
+                    <div class="flex gap-2">
+                        <input 
+                            id="messageInput" 
+                            type="text"
+                            placeholder="Ask about your finances..."
+                            class="flex-1 bg-dark-elevated border border-dark-border rounded-xl px-4 py-3 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                        />
+                        <button 
+                            id="sendBtn" 
+                            class="flex-shrink-0 w-12 h-12 bg-gradient-to-r from-primary-500 to-blue-500 hover:shadow-lg hover:shadow-primary-500/50 rounded-xl flex items-center justify-center group transition-all transform hover:scale-105">
+                            <i class="fas fa-paper-plane text-white group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform"></i>
+                        </button>
+                    </div>
+
+                    <!-- Quick Prompts -->
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="quickPrompt('Analyze my spending')" class="text-xs bg-dark-elevated hover:bg-dark-hover text-gray-400 hover:text-primary-400 px-3 py-1.5 rounded-lg transition-colors">
+                            💰 Spending
+                        </button>
+                        <button onclick="quickPrompt('Show income trends')" class="text-xs bg-dark-elevated hover:bg-dark-hover text-gray-400 hover:text-primary-400 px-3 py-1.5 rounded-lg transition-colors">
+                            📈 Income
+                        </button>
+                        <button onclick="quickPrompt('Savings advice')" class="text-xs bg-dark-elevated hover:bg-dark-hover text-gray-400 hover:text-primary-400 px-3 py-1.5 rounded-lg transition-colors">
+                            🎯 Savings
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Drag & Drop Overlay -->
+                <div id="dropOverlay" class="hidden absolute inset-0 bg-primary-500/10 backdrop-blur-sm rounded-3xl border-2 border-dashed border-primary-500 flex items-center justify-center z-50">
+                    <div class="text-center">
+                        <i class="fas fa-cloud-upload-alt text-6xl text-primary-400 mb-4 animate-bounce"></i>
+                        <p class="text-xl font-bold text-primary-400">Drop your file here</p>
+                        <p class="text-sm text-gray-400 mt-2">CSV, PDF, Excel supported</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden file form -->
+<input id="hiddenFileInput" type="file" accept=".csv,.pdf,.xlsx,.xls" hidden />
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Quick prompt function
+    function quickPrompt(text) {
+        document.getElementById('messageInput').value = text;
+        document.getElementById('sendBtn').click();
+    }
+    
+    // Animate elements on load
+    document.addEventListener('DOMContentLoaded', () => {
+        // Stagger animation for cards
+        const cards = document.querySelectorAll('.glass-card');
+        cards.forEach((card, index) => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            setTimeout(() => {
+                card.style.transition = 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            }, index * 100);
+        });
+    });
+</script>
+{% endblock %}
