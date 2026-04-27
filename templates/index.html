@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ project_name }} | Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+</head>
+<body class="dark">
+    
+    <!-- Header -->
+    <header class="header">
+        <div class="logo-section">
+            <div class="logo">F</div>
+            <div class="brand-name">{{ project_name }}</div>
+        </div>
+        <div class="header-actions">
+            <span class="user-greeting">👋 {{ user_name }}</span>
+            <label class="theme-toggle">
+                <input type="checkbox" id="themeToggle">
+                <span class="slider"></span>
+            </label>
+            <a href="{{ url_for('logout') }}" class="btn btn-sm">Logout</a>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <div class="dashboard">
+            
+            <!-- Chat Section -->
+            <div class="chat-section">
+                <div id="chatWindow">
+                    <div class="chat-header">
+                        <h2>💬 Financial Assistant</h2>
+                        <p class="subtitle">Upload documents and get AI-powered analysis</p>
+                    </div>
+
+                    <div id="messages" class="messages"></div>
+
+                    <div class="input-container">
+                        <div class="file-upload-area" id="dropZone">
+                            <input type="file" id="fileInput" accept=".pdf,.csv,.xlsx,.xls" style="display:none;">
+                            <button id="attachBtn" class="btn-icon" title="Attach file">📎</button>
+                            <span class="file-hint">Drag & drop files here or click attach</span>
+                        </div>
+                        
+                        <div class="message-row">
+                            <input 
+                                type="text" 
+                                id="messageInput" 
+                                placeholder="Ask me about your finances..."
+                                autocomplete="off"
+                            >
+                            <button id="sendBtn" class="btn">Send</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Visualization Section -->
+            <div class="viz-section">
+                <div id="visualPreview" class="hidden">
+                    <div class="viz-header">
+                        <h2>📊 Insights & Analytics</h2>
+                        <button onclick="closeVisualization()" class="btn-close">✕</button>
+                    </div>
+                    <div id="vizArea"></div>
+                </div>
+                
+                <div id="emptyState" class="empty-state">
+                    <div class="empty-icon">📈</div>
+                    <h3>No Visualization Yet</h3>
+                    <p>Upload a financial document to see analytics and insights</p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // ==================== STATE MANAGEMENT ====================
+        let state = {
+            uploadedFile: null,
+            fileType: null,
+            chatHistory: [],
+            theme: 'dark'
+        };
+
+        // ==================== DOM REFERENCES ====================
+        const msgBox = document.getElementById("messages");
+        const fileInput = document.getElementById("fileInput");
+        const attachBtn = document.getElementById("attachBtn");
+        const sendBtn = document.getElementById("sendBtn");
+        const messageInput = document.getElementById("messageInput");
+        const chatWindow = document.getElementById("chatWindow");
+        const dropZone = document.getElementById("dropZone");
+        const vizArea = document.getElementById("vizArea");
+        const visualPreview = document.getElementById("visualPreview");
+        const emptyState = document.getElementById("emptyState");
+
+        // ==================== THEME MANAGEMENT ====================
+        const themeToggle = document.getElementById("themeToggle");
+        if (themeToggle) {
+            themeToggle.addEventListener("change", (e) => {
+                document.body.classList.toggle("dark");
+                state.theme = document.body.classList.contains("dark") ? "dark" : "light";
+            });
+        }
+
+        // ==================== MESSAGE SYSTEM ====================
+        function addMessage(text, sender = "bot", isHTML = false) {
+            const div = document.createElement("div");
+            div.className = `msg ${sender}`;
+            
+            if (isHTML) {
+                div.innerHTML = text;
+            } else {
+                div.textContent = text;
+            }
+            
+            msgBox.appendChild(div);
+            msgBox.scrollTop = msgBox.scrollHeight;
+            
+            state.chatHistory.push({ text, sender, timestamp: Date.now() });
+            return div;
+        }
+
+        function showTyping() {
+            const div = document.createElement("div");
+            div.className = "msg bot typing";
+            div.innerHTML = '<span></span><span></span><span></span>';
+            msgBox.appendChild(div);
+            msgBox.scrollTop = msgBox.scrollHeight;
+            return div;
+        }
+
+        function removeTyping() {
+            const typing = msgBox.querySelector('.typing');
+            if (typing) typing.remove();
+        }
+
+        // ==================== FILE UPLOAD ====================
+        if (attachBtn) attachBtn.addEventListener("click", () => fileInput.click());
+        if (fileInput) fileInput.addEventListener("change", handleFileUpload);
+
+        async function handleFileUpload() {
+            const file = fileInput.files[0];
+            if (!file) return;
+
+            // Validation
+            const maxSize = 16 * 1024 * 1024;
+            if (file.size > maxSize) {
+                addMessage("❌ File too large. Maximum size is 16MB.", "bot");
+                return;
+            }
+
+            const validTypes = ['pdf', 'csv', 'xlsx', 'xls'];
+            const fileExt = file.name.split('.').pop().toLowerCase();
+            if (!validTypes.includes(fileExt)) {
+                addMessage("❌ Unsupported file type. Please upload PDF, CSV, or XLSX.", "bot");
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append("file", file);
+
+            addMessage(`📎 Uploading: ${file.name}`, "user");
+            const typing = showTyping();
+
+            try {
+                const response = await fetch("/api/upload", {
+                    method: "POST",
+                    body: formData
+                });
+
+                const data = await response.json();
+                removeTyping();
+
+                console.log("Upload response:", data);
+
+                if (data.status === "ok") {
+                    state.uploadedFile = data.saved_as;
+                    state.fileType = data.file_type;
+                    
+                    const sizeKB = (data.size_bytes / 1024).toFixed(1);
+                    addMessage(`✅ **${data.original}** uploaded successfully! (${sizeKB} KB)`, "bot", true);
+                    
+                    // Show action buttons
+                    displayActions(data.actions, data.original);
+                } else {
+                    addMessage(`❌ ${data.message || "Upload failed"}`, "bot");
+                }
+            } catch (error) {
+                removeTyping();
+                addMessage("⚠️ Network error. Please check server.", "bot");
+                console.error("Upload error:", error);
+            }
+        }
+
+        // ==================== ACTION BUTTONS ====================
+        function displayActions(actions, filename) {
+            if (!actions) return;
+            
+            let html = '<div class="action-buttons">';
+            html += `<p class="action-prompt">Choose an action for <strong>${filename}</strong>:</p>`;
+            
+            // Add visualization button
+            if (actions.visualization) {
+                html += '<button class="action-btn viz-btn" onclick="openVisualization()">📊 Visualization</button>';
+            }
+            
+            // Add analysis buttons
+            if (Array.isArray(actions.analyses)) {
+                actions.analyses.forEach(analysis => {
+                    const btnClass = analysis.toLowerCase().includes('bank') ? 'bank-btn' : 
+                                    analysis.toLowerCase().includes('payslip') ? 'payslip-btn' : 
+                                    'analysis-btn';
+                    html += `<button class="action-btn ${btnClass}" onclick="startAnalysis('${analysis}')">${analysis}</button>`;
+                });
+            }
+            
+            html += '</div>';
+            addMessage(html, "bot", true);
+        }
+
+        // ==================== CHAT FUNCTIONALITY ====================
+        if (sendBtn) sendBtn.addEventListener("click", sendMessage);
+        if (messageInput) {
+            messageInput.addEventListener("keypress", (e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+        }
+
+        async function sendMessage() {
+            const msg = messageInput.value.trim();
+            if (!msg) return;
+
+            addMessage(msg, "user");
+            messageInput.value = "";
+            
+            const typing = showTyping();
+
+            try {
+                const response = await fetch("/api/chat", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        message: msg,
+                        filename: state.uploadedFile
+                    })
+                });
+
+                const data = await response.json();
+                removeTyping();
+
+                addMessage(data.reply || "No response received.", "bot", true);
+            } catch (error) {
+                removeTyping();
+                addMessage("⚠️ Failed to send message. Please try again.", "bot");
+                console.error("Chat error:", error);
+            }
+        }
+
+        // ==================== ANALYSIS FUNCTIONS ====================
+        async function startAnalysis(type) {
+            if (!state.uploadedFile) {
+                addMessage("⚠️ Please upload a file first.", "bot");
+                return;
+            }
+
+            const analysisMap = {
+                'Bank Statement Analysis': 'bank statement analysis',
+                'Payslip Analysis': 'payslip analysis',
+                'Data Analysis': 'data analysis',
+                'Statistical Summary': 'statistical summary',
+                'Spreadsheet Analysis': 'spreadsheet analysis',
+                'Financial Report': 'financial report'
+            };
+
+            const analysisMessage = analysisMap[type] || type.toLowerCase();
+            
+            addMessage(`Starting ${type}...`, "user");
+            const typing = showTyping();
+
+            try {
+                const response = await fetch("/api/chat", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        message: analysisMessage,
+                        filename: state.uploadedFile
+                    })
+                });
+
+                const data = await response.json();
+                removeTyping();
+
+                addMessage(data.reply || "Analysis complete.", "bot", true);
+            } catch (error) {
+                removeTyping();
+                addMessage("⚠️ Analysis failed. Please try again.", "bot");
+                console.error("Analysis error:", error);
+            }
+        }
+
+        // ==================== VISUALIZATION ====================
+        async function openVisualization() {
+            if (!state.uploadedFile) {
+                addMessage("⚠️ Please upload a file first.", "bot");
+                return;
+            }
+
+            addMessage("Generating visualization...", "bot");
+            const typing = showTyping();
+
+            try {
+                // For CSV files, show preview
+                if (state.fileType === 'csv') {
+                    const previewRes = await fetch(`/api/preview?filename=${encodeURIComponent(state.uploadedFile)}&rows=10`);
+                    const previewData = await previewRes.json();
+                    
+                    if (previewData.status === "ok") {
+                        renderPreview(previewData);
+                    }
+                }
+
+                // Get visualization data
+                const vizRes = await fetch("/api/vizdata");
+                const vizData = await vizRes.json();
+                
+                removeTyping();
+                
+                renderChart(vizData.payload);
+                
+                // Show visualization panel
+                visualPreview.classList.remove('hidden');
+                emptyState.classList.add('hidden');
+                
+                addMessage("✅ Visualization generated successfully!", "bot");
+            } catch (error) {
+                removeTyping();
+                addMessage("⚠️ Failed to generate visualization.", "bot");
+                console.error("Visualization error:", error);
+            }
+        }
+
+        function closeVisualization() {
+            visualPreview.classList.add('hidden');
+            emptyState.classList.remove('hidden');
+        }
+
+        // ==================== RENDERING FUNCTIONS ====================
+        function renderPreview(data) {
+            vizArea.innerHTML = '<h3 class="viz-title">📄 Data Preview</h3>';
+            
+            const table = document.createElement("table");
+            table.className = "preview-table";
+
+            // Header
+            const thead = document.createElement("thead");
+            const headerRow = document.createElement("tr");
+            data.columns.forEach(col => {
+                const th = document.createElement("th");
+                th.textContent = col;
+                headerRow.appendChild(th);
+            });
+            thead.appendChild(headerRow);
+            table.appendChild(thead);
+
+            // Body
+            const tbody = document.createElement("tbody");
+            data.rows.forEach(row => {
+                const tr = document.createElement("tr");
+                row.forEach(cell => {
+                    const td = document.createElement("td");
+                    td.textContent = cell !== null && cell !== undefined ? cell : 'N/A';
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+            });
+            table.appendChild(tbody);
+
+            vizArea.appendChild(table);
+        }
+
+        function renderChart(data) {
+            if (!window.Plotly) {
+                console.warn("Plotly.js not loaded");
+                return;
+            }
+
+            const chartContainer = document.createElement("div");
+            chartContainer.className = "chart-container";
+            
+            const chartTitle = document.createElement("h3");
+            chartTitle.className = "viz-title";
+            chartTitle.textContent = "📊 Financial Trends";
+            
+            const chartDiv = document.createElement("div");
+            chartDiv.id = "plotlyChart";
+            chartDiv.className = "chart-div";
+
+            chartContainer.appendChild(chartTitle);
+            chartContainer.appendChild(chartDiv);
+            vizArea.appendChild(chartContainer);
+
+            // Create traces
+            const traces = data.series.map(series => ({
+                x: data.x,
+                y: series.values,
+                mode: 'lines+markers',
+                name: series.name,
+                line: { width: 3 },
+                marker: { size: 8 }
+            }));
+
+            // Layout
+            const isDark = state.theme === 'dark';
+            const layout = {
+                title: {
+                    text: data.title || 'Financial Overview',
+                    font: { 
+                        size: 18, 
+                        color: isDark ? '#e6edf3' : '#111',
+                        family: 'Inter, sans-serif'
+                    }
+                },
+                paper_bgcolor: 'transparent',
+                plot_bgcolor: 'transparent',
+                font: { 
+                    color: isDark ? '#d1d5db' : '#333',
+                    family: 'Inter, sans-serif'
+                },
+                xaxis: {
+                    gridcolor: isDark ? '#2d333b' : '#e5e7eb',
+                    title: 'Month'
+                },
+                yaxis: {
+                    gridcolor: isDark ? '#2d333b' : '#e5e7eb',
+                    title: 'Amount (₹)',
+                    tickformat: ',.0f'
+                },
+                hovermode: 'x unified',
+                showlegend: true,
+                legend: {
+                    orientation: 'h',
+                    y: -0.2
+                }
+            };
+
+            const config = {
+                responsive: true,
+                displayModeBar: true,
+                displaylogo: false,
+                modeBarButtonsToRemove: ['lasso2d', 'select2d']
+            };
+
+            Plotly.newPlot('plotlyChart', traces, layout, config);
+        }
+
+        // ==================== DRAG & DROP ====================
+        if (dropZone) {
+            dropZone.addEventListener("dragover", (e) => {
+                e.preventDefault();
+                dropZone.classList.add("dragging");
+            });
+
+            dropZone.addEventListener("dragleave", (e) => {
+                e.preventDefault();
+                dropZone.classList.remove("dragging");
+            });
+
+            dropZone.addEventListener("drop", (e) => {
+                e.preventDefault();
+                dropZone.classList.remove("dragging");
+                
+                const file = e.dataTransfer.files[0];
+                if (file) {
+                    fileInput.files = e.dataTransfer.files;
+                    handleFileUpload();
+                }
+            });
+        }
+
+        // ==================== INITIALIZATION ====================
+        document.addEventListener('DOMContentLoaded', () => {
+            addMessage("👋 Welcome! I'm FINGPT, your AI financial assistant. Upload a bank statement or payslip to get started.", "bot");
+            console.log("✅ FINGPT Dashboard initialized");
+        });
+
+        // Export functions for onclick handlers
+        window.startAnalysis = startAnalysis;
+        window.openVisualization = openVisualization;
+        window.closeVisualization = closeVisualization;
+    </script>
+</body>
+</html>

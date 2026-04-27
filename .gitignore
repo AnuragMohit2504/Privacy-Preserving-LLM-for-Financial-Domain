@@ -1,0 +1,52 @@
+# Python/runtime artifacts
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments and local config
+.env
+.env.*
+!.env.example
+venv/
+.venv/
+env/
+ENV/
+
+# Jupyter and local IDE files
+.ipynb_checkpoints/
+.vscode/
+.idea/
+
+# Generated/user-uploaded data
+uploads/
+bank_statements/
+enhanced_bank_statements/
+data/generators/bank_statements/
+data/generators/enhanced_bank_statements/
+analysis_results/
+enhanced_payslips.csv
+enhanced_payslips_metadata.json
+data/generators/*.csv
+data/generators/*metadata*.json
+data/generators/Untitled.ipynb
+*.db
+*.sqlite
+*.sqlite3
+
+# Backup/scratch folders and OS shortcuts
+bkup/
+CODE_REVIEW.md
+*.lnk
+
+# Large generated documents/archives/presentations
+*.zip
+*.pptx
+*.docx
+
+# Logs and temporary files
+*.log
+tmp/
+temp/

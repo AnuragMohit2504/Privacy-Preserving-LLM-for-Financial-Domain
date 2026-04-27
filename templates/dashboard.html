@@ -1,263 +1,488 @@
-{% extends "base.html" %}
-{% block title %}Dashboard - {{ project_name }}{% endblock %}
-
-{% block content %}
-<div class="container mx-auto px-6 py-8">
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        <!-- LEFT COLUMN (2/3) -->
-        <div class="lg:col-span-2 space-y-8">
-            
-            <!-- Welcome Hero -->
-            <div class="glass-card rounded-3xl p-8 relative overflow-hidden group hover:scale-[1.02] transition-transform">
-                <div class="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-primary-500/20 to-blue-500/20 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700"></div>
-                <div class="relative z-10">
-                    <div class="flex items-center gap-4 mb-4">
-                        <div class="w-16 h-16 bg-gradient-to-br from-primary-500 to-blue-500 rounded-2xl flex items-center justify-center shadow-2xl animate-bounce-slow">
-                            <i class="fas fa-rocket text-3xl text-white"></i>
-                        </div>
-                        <div>
-                            <h2 class="text-3xl font-black bg-gradient-to-r from-primary-400 to-blue-400 bg-clip-text text-transparent">
-                                Welcome back, {{ user_name }}!
-                            </h2>
-                            <p class="text-gray-400 mt-1">Your AI-powered financial command center</p>
-                        </div>
-                    </div>
-                    <p class="text-gray-300 text-lg leading-relaxed">
-                        Upload your financial documents, analyze transactions, and get instant AI-powered insights. 
-                        <span class="text-primary-400 font-semibold">100% private & secure.</span>
-                    </p>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FINGPT | Financial Intelligence Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;900&family=IBM+Plex+Mono:wght@400;500;600&family=Crimson+Pro:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+</head>
+<body class="dark-theme">
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo-container">
+                    <div class="logo-symbol">F</div>
+                    <span class="logo-text">FINGPT</span>
+                </div>
+                <div class="privacy-badge">
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                        <path d="M6 1L10.5 3.5V7C10.5 9.5 8.5 11 6 11C3.5 11 1.5 9.5 1.5 7V3.5L6 1Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                    </svg>
+                    <span>Privacy First</span>
                 </div>
             </div>
 
-            <!-- Stats Grid -->
-            <div class="grid grid-cols-3 gap-4">
-                <div class="glass-card rounded-2xl p-6 hover:scale-105 transition-transform cursor-pointer group">
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                            <i class="fas fa-file-upload text-green-400 text-xl"></i>
-                        </div>
-                        <span class="text-2xl font-bold text-green-400">0</span>
+            <nav class="sidebar-nav">
+                <a href="#dashboard" class="nav-item active" data-section="dashboard">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <rect x="2" y="2" width="7" height="7" stroke="currentColor" stroke-width="1.5"/>
+                        <rect x="11" y="2" width="7" height="7" stroke="currentColor" stroke-width="1.5"/>
+                        <rect x="2" y="11" width="7" height="7" stroke="currentColor" stroke-width="1.5"/>
+                        <rect x="11" y="11" width="7" height="7" stroke="currentColor" stroke-width="1.5"/>
+                    </svg>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#chat" class="nav-item" data-section="chat">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <path d="M17 7.5C17 10.5 13.5 13 10 13C9.5 13 9 12.9 8.5 12.8L5 15V12.5C3.3 11.3 2 9.5 2 7.5C2 4.5 5.5 2 10 2C14.5 2 17 4.5 17 7.5Z" stroke="currentColor" stroke-width="1.5"/>
+                    </svg>
+                    <span>AI Assistant</span>
+                </a>
+                <a href="#analytics" class="nav-item" data-section="analytics">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <path d="M2 17L6 13L10 15L17 8M17 8V12M17 8H13" stroke="currentColor" stroke-width="1.5"/>
+                    </svg>
+                    <span>Analytics</span>
+                </a>
+                <a href="#fl-monitor" class="nav-item" data-section="fl-monitor">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5"/>
+                        <circle cx="10" cy="10" r="3" fill="currentColor"/>
+                        <path d="M10 3V7M10 13V17M3 10H7M13 10H17" stroke="currentColor" stroke-width="1.5"/>
+                    </svg>
+                    <span>FL Monitor</span>
+                    <span class="badge" id="fl-status-badge">●</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="user-profile">
+                    <div class="user-avatar">{{ user_name[0] }}</div>
+                    <div class="user-info">
+                        <div class="user-name">{{ user_name }}</div>
+                        <div class="user-role">Premium</div>
                     </div>
-                    <p class="text-gray-400 text-sm font-semibold">Files Uploaded</p>
                 </div>
-                
-                <div class="glass-card rounded-2xl p-6 hover:scale-105 transition-transform cursor-pointer group">
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                            <i class="fas fa-chart-line text-blue-400 text-xl"></i>
-                        </div>
-                        <span class="text-2xl font-bold text-blue-400">0</span>
-                    </div>
-                    <p class="text-gray-400 text-sm font-semibold">Analyses Run</p>
-                </div>
-                
-                <div class="glass-card rounded-2xl p-6 hover:scale-105 transition-transform cursor-pointer group">
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                            <i class="fas fa-comments text-purple-400 text-xl"></i>
-                        </div>
-                        <span class="text-2xl font-bold text-purple-400">0</span>
-                    </div>
-                    <p class="text-gray-400 text-sm font-semibold">AI Chats</p>
-                </div>
+                <button class="btn-icon" onclick="toggleTheme()">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" id="theme-icon">
+                        <path d="M10 2V4M10 16V18M4 10H2M18 10H16M15.5 4.5L14 6M6 14L4.5 15.5M15.5 15.5L14 14M6 6L4.5 4.5M13 10C13 11.7 11.7 13 10 13C8.3 13 7 11.7 7 10C7 8.3 8.3 7 10 7C11.7 7 13 8.3 13 10Z" stroke="currentColor" stroke-width="1.5"/>
+                    </svg>
+                </button>
+                <button class="btn-icon" onclick="logout()">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <path d="M7 17H4C3.5 17 3 16.5 3 16V4C3 3.5 3.5 3 4 3H7M13 14L17 10M17 10L13 6M17 10H7" stroke="currentColor" stroke-width="1.5"/>
+                    </svg>
+                </button>
             </div>
+        </aside>
 
-            <!-- Quick Actions -->
-            <div class="glass-card rounded-3xl p-8">
-                <div class="flex items-center justify-between mb-6">
-                    <h3 class="text-2xl font-bold text-gray-100 flex items-center gap-3">
-                        <i class="fas fa-bolt text-yellow-400"></i>
-                        Quick Actions
-                    </h3>
-                    <span class="text-xs text-gray-500 font-semibold uppercase tracking-wider">Fast Access</span>
+        <main class="main-content">
+            <header class="top-header">
+                <div class="header-left">
+                    <h1 id="page-title">Dashboard</h1>
+                    <div class="breadcrumb">
+                        <span>Home</span>
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <path d="M6 4L10 8L6 12" stroke="currentColor" stroke-width="1.5"/>
+                        </svg>
+                        <span id="breadcrumb-current">Dashboard</span>
+                    </div>
                 </div>
-                
-                <div class="grid grid-cols-2 gap-4">
-                    <button onclick="document.getElementById('fileInput').click()" class="gradient-border rounded-2xl p-6 hover:scale-105 transition-all group">
-                        <div class="flex flex-col items-center text-center gap-3">
-                            <div class="w-16 h-16 bg-gradient-to-br from-primary-500 to-blue-500 rounded-2xl flex items-center justify-center group-hover:rotate-12 transition-transform">
-                                <i class="fas fa-cloud-upload-alt text-2xl text-white"></i>
-                            </div>
-                            <div>
-                                <p class="font-bold text-gray-100">Upload File</p>
-                                <p class="text-xs text-gray-400 mt-1">CSV, PDF, Excel</p>
-                            </div>
-                        </div>
-                    </button>
-                    
-                    <button onclick="startAnalysis('Bank Statement')" class="gradient-border rounded-2xl p-6 hover:scale-105 transition-all group">
-                        <div class="flex flex-col items-center text-center gap-3">
-                            <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center group-hover:rotate-12 transition-transform">
-                                <i class="fas fa-university text-2xl text-white"></i>
-                            </div>
-                            <div>
-                                <p class="font-bold text-gray-100">Bank Analysis</p>
-                                <p class="text-xs text-gray-400 mt-1">Transactions</p>
-                            </div>
-                        </div>
-                    </button>
-                    
-                    <button onclick="startAnalysis('Payslip')" class="gradient-border rounded-2xl p-6 hover:scale-105 transition-all group">
-                        <div class="flex flex-col items-center text-center gap-3">
-                            <div class="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center group-hover:rotate-12 transition-transform">
-                                <i class="fas fa-money-bill-wave text-2xl text-white"></i>
-                            </div>
-                            <div>
-                                <p class="font-bold text-gray-100">Payslip Review</p>
-                                <p class="text-xs text-gray-400 mt-1">Salary Details</p>
-                            </div>
-                        </div>
-                    </button>
-                    
-                    <button onclick="openVisualization()" class="gradient-border rounded-2xl p-6 hover:scale-105 transition-all group">
-                        <div class="flex flex-col items-center text-center gap-3">
-                            <div class="w-16 h-16 bg-gradient-to-br from-green-500 to-teal-500 rounded-2xl flex items-center justify-center group-hover:rotate-12 transition-transform">
-                                <i class="fas fa-chart-pie text-2xl text-white"></i>
-                            </div>
-                            <div>
-                                <p class="font-bold text-gray-100">Visualization</p>
-                                <p class="text-xs text-gray-400 mt-1">Charts & Graphs</p>
-                            </div>
-                        </div>
+                <div class="header-right">
+                    <button class="btn-secondary" onclick="openFileUpload()">
+                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                            <path d="M9 3V15M3 9H15" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                        Upload Document
                     </button>
                 </div>
+            </header>
+
+            <div class="content-wrapper">
+                <section id="section-dashboard" class="content-section active">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                    <path d="M9 2V6M15 2V6M3 10H21M5 4H19C20.1 4 21 4.9 21 6V20C21 21.1 20.1 22 19 22H5C3.9 22 3 21.1 3 20V6C3 4.9 3.9 4 5 4Z" stroke="white" stroke-width="2"/>
+                                </svg>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-label">Total Transactions</div>
+                                <div class="stat-value" id="stat-transactions">0</div>
+                                <div class="stat-change positive">From uploaded documents</div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                    <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="white" stroke-width="2"/>
+                                    <path d="M2 17L12 22L22 17M2 12L12 17L22 12" stroke="white" stroke-width="2"/>
+                                </svg>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-label">FL Training Rounds</div>
+                                <div class="stat-value" id="stat-fl-rounds">0</div>
+                                <div class="stat-change neutral">Completed rounds</div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                    <path d="M12 22C17.5 22 22 17.5 22 12C22 6.5 17.5 2 12 2C6.5 2 2 6.5 2 12C2 17.5 6.5 22 12 22Z" stroke="white" stroke-width="2"/>
+                                    <path d="M12 6V12L16 14" stroke="white" stroke-width="2"/>
+                                </svg>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-label">Privacy Budget (ε)</div>
+                                <div class="stat-value" id="stat-epsilon">0.00</div>
+                                <div class="stat-change neutral">Safe zone: < 10</div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-icon" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                    <path d="M17 21V19C17 17.9 16.6 16.9 15.9 16.1C15.2 15.4 14.2 15 13 15H5C3.8 15 2.8 15.4 2.1 16.1C1.4 16.9 1 17.9 1 19V21M23 21V19C23 17.9 22.6 16.9 21.9 16.1C21.2 15.4 20.2 15 19 15H18M13 7C13 9.2 11.2 11 9 11C6.8 11 5 9.2 5 7C5 4.8 6.8 3 9 3C11.2 3 13 4.8 13 7ZM20 7C20 9.2 18.2 11 16 11C15.5 11 15 10.9 14.6 10.7M16 3C17.1 3 18.1 3.4 18.8 4.1C19.5 4.8 19.9 5.8 19.9 6.9" stroke="white" stroke-width="2"/>
+                                </svg>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-label">Active Clients</div>
+                                <div class="stat-value" id="stat-clients">0</div>
+                                <div class="stat-change positive">Online now</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-grid">
+                        <div class="dashboard-card">
+                            <div class="card-header">
+                                <h3>Financial Overview</h3>
+                                <select class="period-selector" onchange="updateFinancialChart(this.value)">
+                                    <option value="daily">Daily</option>
+                                    <option value="monthly" selected>Monthly</option>
+                                </select>
+                            </div>
+                            <div id="financial-chart" class="chart-container"></div>
+                        </div>
+
+                        <div class="dashboard-card">
+                            <div class="card-header">
+                                <h3>Spending Categories</h3>
+                                <button class="btn-icon" onclick="refreshCategoryChart()">
+                                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                                        <path d="M15 3L15 7L11 7M15 3L9 9M3 15L3 11L7 11M3 15L9 9" stroke="currentColor" stroke-width="1.5"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div id="category-chart" class="chart-container"></div>
+                        </div>
+                    </div>
+
+                    <div class="recent-files">
+                        <div class="card-header">
+                            <h3>Recent Documents</h3>
+                            <a href="#" class="link-view-all">View All →</a>
+                        </div>
+                        <div class="files-list" id="recent-files-list">
+                            <div class="empty-state">
+                                <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+                                    <path d="M40 8H16C14.9 8 14 8.9 14 10V54C14 55.1 14.9 56 16 56H48C49.1 56 50 55.1 50 54V18L40 8Z" stroke="currentColor" stroke-width="2"/>
+                                    <path d="M40 8V18H50" stroke="currentColor" stroke-width="2"/>
+                                </svg>
+                                <p>No documents uploaded yet</p>
+                                <button class="btn-primary" onclick="openFileUpload()">Upload Your First Document</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="section-chat" class="content-section">
+                    <div class="chat-container">
+                        <div class="chat-panel">
+                            <div class="chat-messages" id="chat-messages">
+                                <div class="welcome-message">
+                                    <div class="welcome-icon">🤖</div>
+                                    <h2>Welcome to FINGPT AI Assistant</h2>
+                                    <p>I'm your privacy-preserving financial analyst. Upload a document or ask me anything about your finances.</p>
+                                    <div class="quick-actions">
+                                        <button class="quick-action-btn" onclick="quickAction('analyze')">
+                                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                                <path d="M2 17L6 13L10 15L17 8" stroke="currentColor" stroke-width="2"/>
+                                            </svg>
+                                            Analyze Document
+                                        </button>
+                                        <button class="quick-action-btn" onclick="quickAction('visualize')">
+                                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                                <rect x="2" y="6" width="4" height="11" stroke="currentColor" stroke-width="2"/>
+                                                <rect x="8" y="2" width="4" height="15" stroke="currentColor" stroke-width="2"/>
+                                                <rect x="14" y="9" width="4" height="8" stroke="currentColor" stroke-width="2"/>
+                                            </svg>
+                                            Create Visualization
+                                        </button>
+                                        <button class="quick-action-btn" onclick="quickAction('train')">
+                                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                                <circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="2"/>
+                                                <path d="M10 6V10L13 13" stroke="currentColor" stroke-width="2"/>
+                                            </svg>
+                                            FL Training
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="chat-input-area">
+                                <div class="file-attachment" id="file-attachment" style="display: none;">
+                                    <div class="attachment-info">
+                                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                            <path d="M12 2L7 7L12 12L17 7L12 2Z" stroke="currentColor" stroke-width="1.5"/>
+                                            <path d="M3 12L8 17L13 12" stroke="currentColor" stroke-width="1.5"/>
+                                        </svg>
+                                        <span id="attachment-name"></span>
+                                    </div>
+                                    <button class="btn-icon" onclick="removeAttachment()">
+                                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                            <path d="M12 4L4 12M4 4L12 12" stroke="currentColor" stroke-width="2"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div class="input-container">
+                                    <button class="btn-icon" onclick="document.getElementById('file-upload').click()">
+                                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                            <path d="M10 4V16M4 10H16" stroke="currentColor" stroke-width="2"/>
+                                        </svg>
+                                    </button>
+                                    <input type="file" id="file-upload" accept=".pdf,.csv,.xlsx,.xls" style="display: none;" onchange="handleFileSelect(event)">
+                                    <textarea id="chat-input" placeholder="Ask me anything about your finances..." rows="1" onkeydown="handleChatKeydown(event)"></textarea>
+                                    <button class="btn-send" onclick="sendMessage()" id="send-btn">
+                                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                            <path d="M18 2L9 11M18 2L12 18L9 11M18 2L2 8L9 11" stroke="currentColor" stroke-width="2"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="chat-sidebar">
+                            <div class="sidebar-section">
+                                <h4>Suggested Prompts</h4>
+                                <div class="suggested-prompts">
+                                    <button class="prompt-btn" onclick="usePrompt('Analyze this financial report')">Analyze this financial report</button>
+                                    <button class="prompt-btn" onclick="usePrompt('Generate financial insights dashboard')">Generate financial insights dashboard</button>
+                                    <button class="prompt-btn" onclick="usePrompt('Create a budget plan')">Create a budget plan</button>
+                                    <button class="prompt-btn" onclick="usePrompt('Find unusual transactions')">Find unusual transactions</button>
+                                </div>
+                            </div>
+
+                            <div class="sidebar-section">
+                                <h4>Recent Conversations</h4>
+                                <div class="conversation-list" id="conversation-list">
+                                    <div class="empty-state-small">No conversations yet</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="section-analytics" class="content-section">
+                    <div class="analytics-grid">
+                        <div class="dashboard-card full-width">
+                            <div class="card-header">
+                                <h3>Transaction Timeline</h3>
+                                <div class="chart-controls">
+                                    <button class="btn-icon" onclick="changeChartType('timeline', 'line')">Line</button>
+                                    <button class="btn-icon" onclick="changeChartType('timeline', 'bar')">Bar</button>
+                                    <button class="btn-icon" onclick="changeChartType('timeline', 'area')">Area</button>
+                                </div>
+                            </div>
+                            <div id="timeline-chart" class="chart-container-large"></div>
+                        </div>
+
+                        <div class="dashboard-card">
+                            <div class="card-header">
+                                <h3>Income vs Expenses</h3>
+                            </div>
+                            <div id="income-expense-chart" class="chart-container"></div>
+                        </div>
+
+                        <div class="dashboard-card">
+                            <div class="card-header">
+                                <h3>Savings Rate</h3>
+                            </div>
+                            <div id="savings-chart" class="chart-container"></div>
+                        </div>
+
+                        <div class="dashboard-card">
+                            <div class="card-header">
+                                <h3>Top Merchants</h3>
+                            </div>
+                            <div id="merchants-chart" class="chart-container"></div>
+                        </div>
+
+                        <div class="dashboard-card">
+                            <div class="card-header">
+                                <h3>Category Breakdown</h3>
+                            </div>
+                            <div id="category-breakdown-chart" class="chart-container"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="section-fl-monitor" class="content-section">
+                    <div class="fl-monitor-grid">
+                        <div class="dashboard-card highlight">
+                            <div class="card-header">
+                                <h3>Federated Learning Status</h3>
+                                <div class="status-indicator" id="fl-status-indicator">
+                                    <span class="status-dot"></span>
+                                    <span class="status-text">Initializing...</span>
+                                </div>
+                            </div>
+                            <div class="fl-stats">
+                                <div class="fl-stat">
+                                    <div class="fl-stat-label">Current Round</div>
+                                    <div class="fl-stat-value" id="fl-current-round">0</div>
+                                </div>
+                                <div class="fl-stat">
+                                    <div class="fl-stat-label">Active Clients</div>
+                                    <div class="fl-stat-value" id="fl-active-clients">0</div>
+                                </div>
+                                <div class="fl-stat">
+                                    <div class="fl-stat-label">Privacy Budget (ε)</div>
+                                    <div class="fl-stat-value" id="fl-privacy-budget">0.00</div>
+                                </div>
+                                <div class="fl-stat">
+                                    <div class="fl-stat-label">Model Accuracy</div>
+                                    <div class="fl-stat-value" id="fl-accuracy">--</div>
+                                </div>
+                            </div>
+                            <button class="btn-primary full-width" onclick="triggerFLRound()">
+                                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                                    <path d="M9 2L2 6L9 10L16 6L9 2Z" stroke="currentColor" stroke-width="2"/>
+                                    <path d="M2 12L9 16L16 12M2 9L9 13L16 9" stroke="currentColor" stroke-width="2"/>
+                                </svg>
+                                Trigger Training Round
+                            </button>
+                        </div>
+
+                        <div class="dashboard-card">
+                            <div class="card-header">
+                                <h3>Training Progress</h3>
+                            </div>
+                            <div id="training-progress-chart" class="chart-container"></div>
+                        </div>
+
+                        <div class="dashboard-card">
+                            <div class="card-header">
+                                <h3>Privacy Budget Over Time</h3>
+                            </div>
+                            <div id="privacy-budget-chart" class="chart-container"></div>
+                        </div>
+
+                        <div class="dashboard-card full-width">
+                            <div class="card-header">
+                                <h3>Training Logs</h3>
+                                <button class="btn-secondary" onclick="refreshTrainingLogs()">
+                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                        <path d="M14 8C14 11.3 11.3 14 8 14C4.7 14 2 11.3 2 8C2 4.7 4.7 2 8 2C10.8 2 13.1 3.9 13.8 6.5" stroke="currentColor" stroke-width="1.5"/>
+                                        <path d="M14 2V6H10" stroke="currentColor" stroke-width="1.5"/>
+                                    </svg>
+                                    Refresh
+                                </button>
+                            </div>
+                            <div class="training-logs" id="training-logs">
+                                <div class="empty-state">
+                                    <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+                                        <circle cx="32" cy="32" r="28" stroke="currentColor" stroke-width="2"/>
+                                        <circle cx="32" cy="32" r="12" fill="currentColor"/>
+                                        <path d="M32 8V20M32 44V56M8 32H20M44 32H56" stroke="currentColor" stroke-width="2"/>
+                                    </svg>
+                                    <p>No training rounds yet</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="dashboard-card">
+                            <div class="card-header">
+                                <h3>System Components</h3>
+                            </div>
+                            <div class="component-status" id="component-status">
+                                <div class="component-item">
+                                    <div class="component-info">
+                                        <span class="component-icon">🔐</span>
+                                        <span class="component-name">Homomorphic Encryption</span>
+                                    </div>
+                                    <span class="component-badge loading">Checking...</span>
+                                </div>
+                                <div class="component-item">
+                                    <div class="component-info">
+                                        <span class="component-icon">🛡️</span>
+                                        <span class="component-name">Differential Privacy</span>
+                                    </div>
+                                    <span class="component-badge loading">Checking...</span>
+                                </div>
+                                <div class="component-item">
+                                    <div class="component-info">
+                                        <span class="component-icon">🔒</span>
+                                        <span class="component-name">Secure Aggregation</span>
+                                    </div>
+                                    <span class="component-badge loading">Checking...</span>
+                                </div>
+                                <div class="component-item">
+                                    <div class="component-info">
+                                        <span class="component-icon">📝</span>
+                                        <span class="component-name">Audit Logging</span>
+                                    </div>
+                                    <span class="component-badge loading">Checking...</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="dashboard-card">
+                            <div class="card-header">
+                                <h3>Quick Actions</h3>
+                            </div>
+                            <div class="quick-actions-grid">
+                                <button class="action-card" onclick="submitFeaturesForTraining()">
+                                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                                        <path d="M16 4L6 9L16 14L26 9L16 4Z" stroke="currentColor" stroke-width="2"/>
+                                        <path d="M6 19L16 24L26 19M6 14L16 19L26 14" stroke="currentColor" stroke-width="2"/>
+                                    </svg>
+                                    <span>Submit for Training</span>
+                                </button>
+                                <button class="action-card" onclick="downloadModel()">
+                                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                                        <path d="M28 20V26C28 27.1 27.1 28 26 28H6C4.9 28 4 27.1 4 26V20M8 14L16 22M16 22L24 14M16 22V4" stroke="currentColor" stroke-width="2"/>
+                                    </svg>
+                                    <span>Download Model</span>
+                                </button>
+                                <button class="action-card" onclick="viewAuditLogs()">
+                                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                                        <path d="M28 6H4M28 16H4M28 26H4" stroke="currentColor" stroke-width="2"/>
+                                    </svg>
+                                    <span>View Audit Logs</span>
+                                </button>
+                                <button class="action-card" onclick="exportMetrics()">
+                                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                                        <path d="M4 28L10 22L16 26L28 14M28 14V20M28 14H22" stroke="currentColor" stroke-width="2"/>
+                                    </svg>
+                                    <span>Export Metrics</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
             </div>
-
-            <!-- Visualization Area -->
-            <div id="visualPreview" class="glass-card rounded-3xl p-8 hidden animate-slide-up">
-                <div class="flex items-center justify-between mb-6">
-                    <h3 class="text-2xl font-bold text-gray-100 flex items-center gap-3">
-                        <i class="fas fa-chart-area text-primary-400"></i>
-                        Financial Insights
-                    </h3>
-                    <button onclick="document.getElementById('visualPreview').classList.add('hidden')" class="text-gray-400 hover:text-red-400 transition-colors">
-                        <i class="fas fa-times text-xl"></i>
-                    </button>
-                </div>
-                <div id="vizArea" class="min-h-[300px]">
-                    <div class="flex items-center justify-center h-64 text-gray-500">
-                        <div class="text-center">
-                            <i class="fas fa-chart-line text-6xl mb-4 opacity-20"></i>
-                            <p>Visualization will appear here</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- RIGHT COLUMN (1/3) - AI Chat -->
-        <div class="lg:col-span-1">
-            <div class="glass-card rounded-3xl p-6 sticky top-24 max-h-[calc(100vh-8rem)] flex flex-col">
-                <div class="flex items-center justify-between mb-6 pb-4 border-b border-dark-border">
-                    <h3 class="text-xl font-bold text-gray-100 flex items-center gap-2">
-                        <div class="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
-                        AI Assistant
-                    </h3>
-                    <div class="flex items-center gap-2">
-                        <span class="text-xs text-gray-500 font-semibold">GPT-4</span>
-                        <div class="w-8 h-8 bg-gradient-to-br from-primary-500 to-blue-500 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-robot text-sm"></i>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Messages -->
-                <div id="messages" class="flex-1 overflow-y-auto space-y-4 mb-4 pr-2" style="max-height: 400px;">
-                    <div class="flex gap-3 animate-fade-in">
-                        <div class="w-8 h-8 bg-gradient-to-br from-primary-500 to-blue-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                            <i class="fas fa-robot text-sm"></i>
-                        </div>
-                        <div class="flex-1 bg-dark-elevated rounded-2xl rounded-tl-none p-4">
-                            <p class="text-sm text-gray-300 leading-relaxed">
-                                👋 Hello! I'm your <span class="text-primary-400 font-semibold">FINGPT AI</span> assistant. 
-                                Upload your financial documents and I'll help you analyze them instantly!
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Input Area -->
-                <div class="space-y-3">
-                    <!-- File Upload -->
-                    <div class="flex items-center gap-2">
-                        <input id="fileInput" type="file" accept=".csv,.pdf,.xlsx,.xls" hidden />
-                        <button id="attachBtn" class="flex-shrink-0 w-10 h-10 bg-dark-elevated hover:bg-dark-hover rounded-xl flex items-center justify-center group transition-colors">
-                            <i class="fas fa-paperclip text-gray-400 group-hover:text-primary-400 transition-colors"></i>
-                        </button>
-                        <div class="flex-1 text-xs text-gray-500">
-                            <span class="font-semibold">Drag & drop</span> or click to upload
-                        </div>
-                    </div>
-
-                    <!-- Message Input -->
-                    <div class="flex gap-2">
-                        <input 
-                            id="messageInput" 
-                            type="text"
-                            placeholder="Ask about your finances..."
-                            class="flex-1 bg-dark-elevated border border-dark-border rounded-xl px-4 py-3 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
-                        />
-                        <button 
-                            id="sendBtn" 
-                            class="flex-shrink-0 w-12 h-12 bg-gradient-to-r from-primary-500 to-blue-500 hover:shadow-lg hover:shadow-primary-500/50 rounded-xl flex items-center justify-center group transition-all transform hover:scale-105">
-                            <i class="fas fa-paper-plane text-white group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform"></i>
-                        </button>
-                    </div>
-
-                    <!-- Quick Prompts -->
-                    <div class="flex flex-wrap gap-2">
-                        <button onclick="quickPrompt('Analyze my spending')" class="text-xs bg-dark-elevated hover:bg-dark-hover text-gray-400 hover:text-primary-400 px-3 py-1.5 rounded-lg transition-colors">
-                            💰 Spending
-                        </button>
-                        <button onclick="quickPrompt('Show income trends')" class="text-xs bg-dark-elevated hover:bg-dark-hover text-gray-400 hover:text-primary-400 px-3 py-1.5 rounded-lg transition-colors">
-                            📈 Income
-                        </button>
-                        <button onclick="quickPrompt('Savings advice')" class="text-xs bg-dark-elevated hover:bg-dark-hover text-gray-400 hover:text-primary-400 px-3 py-1.5 rounded-lg transition-colors">
-                            🎯 Savings
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Drag & Drop Overlay -->
-                <div id="dropOverlay" class="hidden absolute inset-0 bg-primary-500/10 backdrop-blur-sm rounded-3xl border-2 border-dashed border-primary-500 flex items-center justify-center z-50">
-                    <div class="text-center">
-                        <i class="fas fa-cloud-upload-alt text-6xl text-primary-400 mb-4 animate-bounce"></i>
-                        <p class="text-xl font-bold text-primary-400">Drop your file here</p>
-                        <p class="text-sm text-gray-400 mt-2">CSV, PDF, Excel supported</p>
-                    </div>
-                </div>
-            </div>
-        </div>
+        </main>
     </div>
-</div>
 
-<!-- Hidden file form -->
-<input id="hiddenFileInput" type="file" accept=".csv,.pdf,.xlsx,.xls" hidden />
+    <div class="toast-container" id="toast-container"></div>
 
-{% endblock %}
-
-{% block extra_scripts %}
-<script>
-    // Quick prompt function
-    function quickPrompt(text) {
-        document.getElementById('messageInput').value = text;
-        document.getElementById('sendBtn').click();
-    }
-    
-    // Animate elements on load
-    document.addEventListener('DOMContentLoaded', () => {
-        // Stagger animation for cards
-        const cards = document.querySelectorAll('.glass-card');
-        cards.forEach((card, index) => {
-            card.style.opacity = '0';
-            card.style.transform = 'translateY(20px)';
-            setTimeout(() => {
-                card.style.transition = 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
-                card.style.opacity = '1';
-                card.style.transform = 'translateY(0)';
-            }, index * 100);
-        });
-    });
-</script>
-{% endblock %}
+    <script src="/static/js/dashboard.js"></script>
+</body>
+</html>
