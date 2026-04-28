@@ -1,6 +1,8 @@
-#C:\Users\anura\Desktop\FINGPT_MAJOR_PROJECT\layer2_fl\secure_api\status.py
 from fastapi import APIRouter
-from db.postgres import get_connection
+try:
+    from ..db.postgres import get_connection
+except ImportError:
+    from db.postgres import get_connection
 
 router = APIRouter()
 

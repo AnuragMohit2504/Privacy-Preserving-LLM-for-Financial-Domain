@@ -509,6 +509,48 @@ body {
     margin-top: 20px;
 }
 
+.file-row {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    text-align: left;
+    cursor: pointer;
+    transition: border-color var(--transition-fast), background var(--transition-fast);
+}
+
+.file-row:hover {
+    border-color: var(--accent-primary);
+    background: var(--bg-tertiary);
+}
+
+.file-row-main {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.file-row-main strong,
+.file-row-main span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.file-row-main span,
+.file-row-date {
+    color: var(--text-tertiary);
+    font-size: 12px;
+}
+
 .empty-state {
     text-align: center;
     padding: 60px 20px;
@@ -660,6 +702,27 @@ body {
     border-radius: var(--radius-md);
     font-size: 14px;
     line-height: 1.6;
+    overflow-wrap: anywhere;
+}
+
+.message-bubble h3,
+.message-bubble h4,
+.message-bubble p,
+.message-bubble ul {
+    margin-top: 0;
+}
+
+.message-bubble ul {
+    padding-left: 18px;
+    margin-bottom: 0;
+}
+
+.message-bubble li + li,
+.message-bubble p + p,
+.message-bubble h3 + p,
+.message-bubble h4 + p,
+.message-bubble h4 + ul {
+    margin-top: 8px;
 }
 
 .message.user .message-bubble {
@@ -833,6 +896,25 @@ body {
 .conversation-list {
     max-height: 300px;
     overflow-y: auto;
+}
+
+.conversation-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.conversation-item strong {
+    color: var(--text-primary);
+    font-size: 13px;
+}
+
+.conversation-item span {
+    color: var(--text-tertiary);
+    font-size: 12px;
+    line-height: 1.4;
 }
 
 .empty-state-small {

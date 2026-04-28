@@ -2,6 +2,7 @@ let triggeringRound = false;
 
 let state = {
     uploadedFile: null,
+    uploadedFileId: null,
     fileType: null,
     currentSection: 'dashboard',
     flStatus: { status: 'offline' },
@@ -17,9 +18,30 @@ let state = {
 
 let chartsLoadedForFile = null;
 let currentPeriod = "monthly";
+let timelineChartType = "line";
 
-const BACKEND_URL = window.location.origin;
 const FL_UPDATE_INTERVAL = 10000;
+
+function apiUrl(path) {
+    return path;
+}
+
+async function parseApiResponse(response) {
+    const rawText = await response.text();
+    let data = {};
+
+    try {
+        data = rawText ? JSON.parse(rawText) : {};
+    } catch (error) {
+        throw new Error(rawText || `Unexpected ${response.status} response from server.`);
+    }
+
+    if (!response.ok || data.status === 'error') {
+        throw new Error(data.message || `Request failed with status ${response.status}.`);
+    }
+
+    return data;
+}
 
 document.addEventListener('DOMContentLoaded', () => {
     initializeApp();
@@ -31,6 +53,8 @@ function initializeApp() {
     initFLMonitoring();
     initCharts();
     loadDashboardData();
+    loadRecentFiles();
+    loadConversationHistory();
 
     const chatInput = document.getElementById('chat-input');
     if (chatInput) {
@@ -113,7 +137,7 @@ async function initFLMonitoring() {
 
 async function updateFLStatus() {
     try {
-        const response = await fetch(`${BACKEND_URL}/api/fl_status`);
+        const response = await fetch(apiUrl('/api/fl_status'));
         if (!response.ok) throw new Error("FL status API failed");
         const data = await response.json();
         state.flStatus = data;
@@ -150,7 +174,9 @@ function updateFLIndicators(data) {
         updateElement('stat-fl-rounds', round);
         updateElement('stat-clients', clients);
         updateElement('stat-epsilon', epsilon.toFixed(2));
-        updateElement('stat-transactions', data.stats.pending_features || 0);
+        if (!state.uploadedFile) {
+            updateElement('stat-transactions', 0);
+        }
 
         updateElement('fl-current-round', round);
         updateElement('fl-active-clients', clients);
@@ -235,7 +261,7 @@ async function updateTrainingLogs() {
     if (!logsDiv) return;
 
     try {
-        const response = await fetch(`${BACKEND_URL}/api/training_logs`);
+        const response = await fetch(apiUrl('/api/training_logs'));
         const logs = await response.json();
 
         if (!logs || logs.length === 0) {
@@ -259,6 +285,13 @@ async function updateTrainingLogs() {
                 </span>
             </div>
         `).join('');
+
+        const chronological = [...logs].reverse();
+        state.roundHistory.rounds = chronological.map(log => Number(log.round_no));
+        state.roundHistory.epsilon = chronological.map(log => parseFloat(Number(log.epsilon || 0).toFixed(2)));
+        state.roundHistory.accuracy = chronological.map(log =>
+            log.accuracy === null || log.accuracy === undefined ? 0 : parseFloat(Number(log.accuracy).toFixed(3))
+        );
     } catch (error) {
         console.error('Failed to load training logs:', error);
     }
@@ -441,7 +474,7 @@ async function createFinancialChart(period = 'monthly') {
 
     try {
         const res = await fetch(
-            `${BACKEND_URL}/api/vizdata?filename=${encodeURIComponent(state.uploadedFile)}&period=${period}`
+            apiUrl(`/api/vizdata?filename=${encodeURIComponent(state.uploadedFile)}&period=${period}`)
         );
 
         const json = await res.json();
@@ -452,6 +485,9 @@ async function createFinancialChart(period = 'monthly') {
         }
 
         const payload = json.payload;
+        if (payload.stats && Number.isFinite(Number(payload.stats.total_transactions))) {
+            updateElement('stat-transactions', payload.stats.total_transactions);
+        }
         const xData = payload.x;
         const seriesData = payload.series;
 
@@ -511,7 +547,7 @@ async function createCategoryChart() {
     }
 
     try {
-        const res = await fetch(`${BACKEND_URL}/api/vizdata?filename=${encodeURIComponent(state.uploadedFile)}`);
+        const res = await fetch(apiUrl(`/api/vizdata?filename=${encodeURIComponent(state.uploadedFile)}`));
         const json = await res.json();
 
         if (json.status !== 'success' || !json.payload) {
@@ -564,7 +600,7 @@ async function updateAnalyticsCharts() {
     await createTimelineChart();
     await createIncomeExpenseChart();
     await createSavingsChart();
-    createMerchantsChart();
+    await createMerchantsChart();
     await createCategoryBreakdownChart();
 }
 
@@ -578,7 +614,7 @@ async function createTimelineChart() {
     }
 
     try {
-        const res = await fetch(`${BACKEND_URL}/api/vizdata?filename=${encodeURIComponent(state.uploadedFile)}`);
+        const res = await fetch(apiUrl(`/api/vizdata?filename=${encodeURIComponent(state.uploadedFile)}`));
         const json = await res.json();
 
         if (json.status !== 'success') {
@@ -593,9 +629,9 @@ async function createTimelineChart() {
         const data = [{
             x: payload.x,
             y: series.values,
-            type: 'scatter',
-            mode: 'lines',
-            fill: 'tozeroy',
+            type: timelineChartType === 'bar' ? 'bar' : 'scatter',
+            mode: timelineChartType === 'bar' ? undefined : 'lines',
+            fill: timelineChartType === 'area' ? 'tozeroy' : undefined,
             name: series.name,
             line: { color: '#3b82f6', width: 3 },
             fillcolor: 'rgba(59, 130, 246, 0.15)'
@@ -635,7 +671,7 @@ async function createIncomeExpenseChart() {
     }
 
     try {
-        const res = await fetch(`${BACKEND_URL}/api/vizdata?filename=${encodeURIComponent(state.uploadedFile)}`);
+        const res = await fetch(apiUrl(`/api/vizdata?filename=${encodeURIComponent(state.uploadedFile)}`));
         const json = await res.json();
 
         if (json.status !== 'success') {
@@ -686,7 +722,7 @@ async function createSavingsChart() {
     }
 
     try {
-        const res = await fetch(`${BACKEND_URL}/api/vizdata?filename=${encodeURIComponent(state.uploadedFile)}`);
+        const res = await fetch(apiUrl(`/api/vizdata?filename=${encodeURIComponent(state.uploadedFile)}`));
         const json = await res.json();
 
         if (json.status !== 'success' || json.payload.series.length < 2) {
@@ -731,7 +767,7 @@ async function createSavingsChart() {
 }
 
 // Merchants chart — only meaningful from real uploaded data
-function createMerchantsChart() {
+async function createMerchantsChart() {
     const div = document.getElementById('merchants-chart');
     if (!div) return;
 
@@ -740,8 +776,50 @@ function createMerchantsChart() {
         return;
     }
 
-    // Merchant breakdown requires description column parsing — show honest message
-    renderChartEmptyState(div, 'Merchant analysis requires a "Description" or "Merchant" column in your CSV');
+    try {
+        const res = await fetch(apiUrl(`/api/vizdata?filename=${encodeURIComponent(state.uploadedFile)}`));
+        const json = await res.json();
+
+        if (json.status !== 'success' || !json.payload || !json.payload.merchants) {
+            renderChartEmptyState(div, 'Could not load merchant data from this file');
+            return;
+        }
+
+        const labels = json.payload.merchants.labels || [];
+        const values = json.payload.merchants.values || [];
+
+        if (labels.length === 0 || values.length === 0) {
+            renderChartEmptyState(div, 'Merchant analysis requires a Description, Narration, Merchant, Remarks, or Particulars column');
+            return;
+        }
+
+        const data = [{
+            x: values,
+            y: labels,
+            type: 'bar',
+            orientation: 'h',
+            marker: { color: '#06b6d4' },
+            name: 'Amount'
+        }];
+
+        const layout = {
+            paper_bgcolor: 'transparent',
+            plot_bgcolor: 'transparent',
+            font: { color: state.theme === 'dark' ? '#9ca3af' : '#4b5563', size: 11 },
+            margin: { l: 110, r: 20, t: 10, b: 35 },
+            xaxis: {
+                title: 'Amount',
+                gridcolor: state.theme === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'
+            },
+            yaxis: { automargin: true },
+            showlegend: false
+        };
+
+        Plotly.newPlot(div, data, layout, { responsive: true, displayModeBar: false });
+    } catch (err) {
+        console.error('Merchant chart error:', err);
+        renderChartEmptyState(div, 'Failed to load merchant chart');
+    }
 }
 
 async function createCategoryBreakdownChart() {
@@ -754,7 +832,7 @@ async function createCategoryBreakdownChart() {
     }
 
     try {
-        const res = await fetch(`${BACKEND_URL}/api/vizdata?filename=${encodeURIComponent(state.uploadedFile)}`);
+        const res = await fetch(apiUrl(`/api/vizdata?filename=${encodeURIComponent(state.uploadedFile)}`));
         const json = await res.json();
 
         if (json.status !== 'success' || !json.payload) {
@@ -803,6 +881,107 @@ async function loadDashboardData() {
     // Stats are loaded from FL status — no random numbers
     // Kick off the first FL status fetch which populates all stat cards
     await updateFLStatus();
+    await updateTrainingLogs();
+}
+
+async function loadRecentFiles() {
+    const list = document.getElementById('recent-files-list');
+    if (!list) return;
+
+    try {
+        const response = await fetch(apiUrl('/api/files?limit=5'));
+        const data = await response.json();
+        const files = data.files || [];
+
+        if (data.status !== 'success' || files.length === 0) {
+            list.innerHTML = `
+                <div class="empty-state">
+                    <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+                        <path d="M40 8H16C14.9 8 14 8.9 14 10V54C14 55.1 14.9 56 16 56H48C49.1 56 50 55.1 50 54V18L40 8Z" stroke="currentColor" stroke-width="2"/>
+                        <path d="M40 8V18H50" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                    <p>No documents uploaded yet</p>
+                    <button class="btn-primary" onclick="openFileUpload()">Upload Your First Document</button>
+                </div>`;
+            return;
+        }
+
+        list.innerHTML = files.map(file => `
+            <button class="file-row" type="button" onclick="selectRecentFile('${escapeAttr(file.filename)}', '${escapeAttr(file.original_filename)}', '${escapeAttr(file.file_type)}')">
+                <div class="file-row-main">
+                    <strong>${escapeHtml(file.original_filename || file.filename)}</strong>
+                    <span>${String(file.file_type || '').toUpperCase()} - ${formatBytes(file.file_size || 0)}</span>
+                </div>
+                <span class="file-row-date">${formatDate(file.uploaded_at)}</span>
+            </button>
+        `).join('');
+    } catch (error) {
+        console.error('Recent files error:', error);
+    }
+}
+
+async function loadConversationHistory() {
+    const list = document.getElementById('conversation-list');
+    if (!list) return;
+
+    try {
+        const response = await fetch(apiUrl('/api/chat_history?limit=8'));
+        const data = await response.json();
+        const messages = data.messages || [];
+
+        if (data.status !== 'success' || messages.length === 0) {
+            list.innerHTML = '<div class="empty-state-small">No conversations yet</div>';
+            return;
+        }
+
+        list.innerHTML = messages.slice(-6).reverse().map(message => `
+            <div class="conversation-item">
+                <strong>${message.sender === 'user' ? 'You' : 'FINGPT'}</strong>
+                <span>${escapeHtml(stripHtml(message.message)).slice(0, 90)}</span>
+            </div>
+        `).join('');
+    } catch (error) {
+        console.error('Conversation history error:', error);
+    }
+}
+
+function selectRecentFile(filename, originalName, fileType) {
+    state.uploadedFile = filename;
+    state.uploadedFileId = null;
+    state.fileType = fileType;
+    const attachment = document.getElementById('file-attachment');
+    const attachmentName = document.getElementById('attachment-name');
+    if (attachment && attachmentName) {
+        attachmentName.textContent = originalName || filename;
+        attachment.style.display = 'flex';
+    }
+    chartsLoadedForFile = null;
+    initCharts(true);
+    showToast(`Loaded ${originalName || filename}`, 'success');
+}
+
+function formatBytes(bytes) {
+    const value = Number(bytes || 0);
+    if (value < 1024) return `${value} B`;
+    if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KB`;
+    return `${(value / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function formatDate(value) {
+    if (!value) return '';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    return date.toLocaleDateString();
+}
+
+function stripHtml(value) {
+    const div = document.createElement('div');
+    div.innerHTML = value || '';
+    return div.textContent || div.innerText || '';
+}
+
+function escapeAttr(value) {
+    return String(value || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 }
 
 // ==================== CHART HELPERS ====================
@@ -857,15 +1036,16 @@ async function handleFileSelect(event) {
     showToast(`Uploading ${file.name}...`, 'info');
 
     try {
-        const response = await fetch(`${BACKEND_URL}/api/upload`, {
+        const response = await fetch(apiUrl('/api/upload'), {
             method: 'POST',
             body: formData
         });
 
-        const data = await response.json();
+        const data = await parseApiResponse(response);
 
         if (data.status === 'success') {
             state.uploadedFile = data.data.saved_filename;
+            state.uploadedFileId = data.data.file_id;
             state.fileType = data.data.file_type;
 
             showToast(`${file.name} uploaded successfully!`, 'success');
@@ -873,6 +1053,7 @@ async function handleFileSelect(event) {
             document.getElementById('file-attachment').style.display = 'flex';
 
             addChatMessage(`📎 File uploaded: ${file.name}`, 'bot');
+            loadRecentFiles();
 
             // Refresh dashboard charts with real data now that file is available
             if (state.currentSection === 'dashboard') {
@@ -883,17 +1064,16 @@ async function handleFileSelect(event) {
             if (state.currentSection !== 'chat') {
                 navigateToSection('chat');
             }
-        } else {
-            showToast(data.message || 'Upload failed', 'error');
         }
     } catch (error) {
-        showToast('Network error. Please try again.', 'error');
+        showToast(error.message || 'Upload failed. Please try again.', 'error');
         console.error('Upload error:', error);
     }
 }
 
 function removeAttachment() {
     state.uploadedFile = null;
+    state.uploadedFileId = null;
     state.fileType = null;
     document.getElementById('file-attachment').style.display = 'none';
     // Reset charts to empty state
@@ -914,23 +1094,19 @@ async function sendMessage() {
     const typingDiv = addTypingIndicator();
 
     try {
-        const response = await fetch(`${BACKEND_URL}/api/chat`, {
+        const response = await fetch(apiUrl('/api/chat'), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message, filename: state.uploadedFile })
+            body: JSON.stringify({ message, filename: state.uploadedFile, file_id: state.uploadedFileId })
         });
 
-        const data = await response.json();
+        const data = await parseApiResponse(response);
         typingDiv.remove();
-
-        if (data.status === 'success') {
-            addChatMessage(data.data.reply, 'bot', true);
-        } else {
-            addChatMessage('Failed to get response. Please try again.', 'bot');
-        }
+        addChatMessage(data.data.reply, 'bot', true);
+        loadConversationHistory();
     } catch (error) {
         typingDiv.remove();
-        addChatMessage('Network error. Please check your connection.', 'bot');
+        addChatMessage(error.message || 'Request failed. Please try again.', 'bot');
         console.error('Chat error:', error);
     }
 }
@@ -1041,7 +1217,7 @@ async function triggerFLRound() {
     showToast('Triggering FL training round...', 'info');
 
     try {
-        const response = await fetch(`${BACKEND_URL}/api/trigger_round`, {
+        const response = await fetch(apiUrl('/api/trigger_round'), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' }
         });
@@ -1099,34 +1275,56 @@ function updateFinancialChart(period) {
 }
 
 function changeChartType(chart, type) {
-    showToast(`Chart type selection coming soon`, 'info');
+    if (chart === 'timeline') {
+        timelineChartType = type;
+        createTimelineChart();
+        showToast(`Timeline changed to ${type}`, 'success');
+        return;
+    }
+    showToast('Chart type updated', 'success');
 }
 
 // ==================== QUICK ACTIONS ====================
 
 function downloadModel() {
-    showToast('Model export — coming soon', 'info');
+    exportJson('fingpt_model_status', {
+        fl_status: state.flStatus,
+        exported_at: new Date().toISOString()
+    });
+    showToast('Model status exported', 'success');
 }
 
-function viewAuditLogs() {
-    showToast('Opening audit logs — coming soon', 'info');
+async function viewAuditLogs() {
+    try {
+        const response = await fetch(apiUrl('/api/audit_logs?limit=50'));
+        const data = await response.json();
+        if (data.status !== 'success') throw new Error(data.message || 'Audit log fetch failed');
+        exportJson('fingpt_audit_logs', data.logs || []);
+        showToast('Audit logs exported', 'success');
+    } catch (error) {
+        console.error('Audit logs error:', error);
+        showToast('Could not export audit logs', 'error');
+    }
 }
 
 function exportMetrics() {
-    // Export real FL status as JSON
     const metrics = {
         fl_status: state.flStatus,
         round_history: state.roundHistory,
         exported_at: new Date().toISOString()
     };
-    const blob = new Blob([JSON.stringify(metrics, null, 2)], { type: 'application/json' });
+    exportJson('fingpt_metrics', metrics);
+    showToast('Metrics exported successfully', 'success');
+}
+
+function exportJson(prefix, payload) {
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `fingpt_metrics_${Date.now()}.json`;
+    a.download = `${prefix}_${Date.now()}.json`;
     a.click();
     URL.revokeObjectURL(url);
-    showToast('Metrics exported successfully', 'success');
 }
 
 // ==================== AUTH ====================

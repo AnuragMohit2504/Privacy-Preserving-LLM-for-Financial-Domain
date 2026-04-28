@@ -3,6 +3,7 @@ from psycopg2.extras import RealDictCursor
 from psycopg2 import pool
 from contextlib import contextmanager
 import os
+import json
 from datetime import datetime
 
 DB_CONFIG = {
@@ -115,21 +116,51 @@ def insert_audit_log(action, details=None):
                 (action, details)
             )
 
-def log_training_round(client_id, round_no, epsilon):
+def table_has_column(conn, table_name, column_name):
+    with conn.cursor() as cur:
+        cur.execute(
+            """SELECT 1
+               FROM information_schema.columns
+               WHERE table_name = %s AND column_name = %s""",
+            (table_name, column_name)
+        )
+        return cur.fetchone() is not None
+
+def log_training_round(client_id, round_no, epsilon, accuracy=None):
     with get_db() as conn:
         with conn.cursor() as cur:
-            cur.execute(
-                """INSERT INTO training_rounds (client_id, round_no, epsilon) 
-                   VALUES (%s, %s, %s)""",
-                (client_id, round_no, float(epsilon))
-            )
+            if table_has_column(conn, "training_rounds", "accuracy"):
+                cur.execute(
+                    """INSERT INTO training_rounds (client_id, round_no, epsilon, accuracy)
+                       VALUES (%s, %s, %s, %s)""",
+                    (client_id, round_no, float(epsilon), accuracy)
+                )
+            else:
+                cur.execute(
+                    """INSERT INTO training_rounds (client_id, round_no, epsilon)
+                       VALUES (%s, %s, %s)""",
+                    (client_id, round_no, float(epsilon))
+                )
 def get_training_rounds(limit=50):
     with get_db() as conn:
         with conn.cursor() as cur:
+            accuracy_expr = "accuracy" if table_has_column(conn, "training_rounds", "accuracy") else "NULL AS accuracy"
             cur.execute(
-                """SELECT client_id, round_no, epsilon, created_at 
-                   FROM training_rounds 
-                   ORDER BY created_at DESC 
+                f"""SELECT client_id, round_no, epsilon, {accuracy_expr}, created_at
+                    FROM training_rounds
+                    ORDER BY created_at DESC
+                    LIMIT %s""",
+                (limit,)
+            )
+            return cur.fetchall()
+
+def get_audit_logs(limit=50):
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """SELECT action, details, created_at
+                   FROM audit_logs
+                   ORDER BY created_at DESC
                    LIMIT %s""",
                 (limit,)
             )
@@ -161,6 +192,20 @@ def get_user_files(user_email, limit=50):
             )
             return cur.fetchall()
 
+def get_user_file_by_filename(user_email, filename):
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """SELECT id, filename, original_filename, file_type, file_size,
+                          uploaded_at, processed
+                   FROM uploaded_files
+                   WHERE user_email = %s AND filename = %s
+                   ORDER BY uploaded_at DESC
+                   LIMIT 1""",
+                (user_email, filename)
+            )
+            return cur.fetchone()
+
 def get_chat_history(user_email, limit=100):
     with get_db() as conn:
         with conn.cursor() as cur:
@@ -169,6 +214,36 @@ def get_chat_history(user_email, limit=100):
                    FROM chat_history 
                    WHERE user_email = %s 
                    ORDER BY created_at DESC LIMIT %s""",
+                (user_email, limit)
+            )
+            return cur.fetchall()
+
+def log_llm_privacy_audit(
+    user_email, query, response, risk_score, risk_level,
+    pii_count, synthetic_epsilon, cumulative_epsilon, sanitization_actions
+):
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """INSERT INTO llm_privacy_logs 
+                   (user_email, query_text, response_text, risk_score, risk_level,
+                    pii_count, synthetic_epsilon, cumulative_epsilon, sanitization_actions)
+                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+                (user_email, query[:500], response[:500], risk_score, risk_level,
+                 pii_count, synthetic_epsilon, cumulative_epsilon,
+                 json.dumps(sanitization_actions) if sanitization_actions else None)
+            )
+
+def get_llm_privacy_logs(user_email, limit=50):
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """SELECT risk_score, risk_level, pii_count, synthetic_epsilon,
+                          cumulative_epsilon, created_at
+                   FROM llm_privacy_logs
+                   WHERE user_email = %s
+                   ORDER BY created_at DESC
+                   LIMIT %s""",
                 (user_email, limit)
             )
             return cur.fetchall()

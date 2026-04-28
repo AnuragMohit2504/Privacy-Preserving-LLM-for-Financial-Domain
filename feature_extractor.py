@@ -21,7 +21,10 @@ def safe_float_convert(value, default=0.0):
 def extract_bank_statement_features_csv(filepath):
     """Extract features from CSV bank statement"""
     try:
-        df = pd.read_csv(filepath)
+        if filepath.lower().endswith(('.xlsx', '.xls')):
+            df = pd.read_excel(filepath)
+        else:
+            df = pd.read_csv(filepath)
         
         amount_cols = [col for col in df.columns if any(word in col.lower() 
                        for word in ['amount', 'debit', 'credit', 'balance', 'withdrawal', 'deposit'])]
@@ -257,7 +260,7 @@ def extract_features(filepath, file_type, analysis_type):
     try:
         if analysis_type == 'payslip' or 'payslip' in filepath.lower():
             return extract_payslip_features_pdf(filepath)
-        elif file_type == 'csv':
+        elif file_type in {'csv', 'xlsx', 'xls'}:
             return extract_bank_statement_features_csv(filepath)
         elif file_type == 'pdf':
             return extract_bank_statement_features_pdf(filepath)

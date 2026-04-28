@@ -9,6 +9,14 @@ from sklearn.linear_model import SGDClassifier
 from sklearn.metrics import accuracy_score
 import requests
 
+try:
+    from ..db.postgres import log_training_round
+except ImportError:
+    try:
+        from db.postgres import log_training_round
+    except ImportError:
+        log_training_round = None
+
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -184,6 +192,12 @@ def trigger_round():
     PENDING_FEATURES = []
     
     logger.info(f"🎯 Round {CURRENT_ROUND} triggered ({count} features)")
+    if log_training_round:
+        try:
+            log_training_round("secure-api", CURRENT_ROUND, PRIVACY_EPSILON, MODEL_ACCURACY)
+        except Exception as e:
+            logger.warning(f"Could not persist training round: {str(e)}")
+
     X_BUFFER.clear()
     Y_BUFFER.clear()
     return {

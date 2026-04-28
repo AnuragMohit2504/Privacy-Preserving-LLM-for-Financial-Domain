@@ -42,34 +42,48 @@ def insert_audit_log(action: str, details: str):
 # ==========================
 # Training Round Metadata
 # ==========================
-def log_training_round(client_id: str, round_no: int, epsilon: float):
+def log_training_round(client_id: str, round_no: int, epsilon: float, accuracy: float = None):
     """
     Store ONLY metadata:
     - client id
     - round number
-    - privacy budget (ε)
+    - privacy budget
+    - optional model accuracy
     NO data, NO gradients, NO weights.
     """
     conn = get_connection()
     try:
         with conn.cursor() as cur:
             cur.execute(
-                """
-                INSERT INTO training_rounds (
-                    client_id,
-                    round_no,
-                    epsilon,
-                    created_at
-                )
-                VALUES (%s, %s, %s, %s)
-                """,
-                (
-                    client_id,
-                    round_no,
-                    float(epsilon),   # ✅ CRITICAL FIX
-                    datetime.utcnow(),
-                ),
+                "SELECT 1 FROM information_schema.columns WHERE table_name = 'training_rounds' AND column_name = 'accuracy'"
             )
+            if cur.fetchone():
+                cur.execute(
+                    """
+                    INSERT INTO training_rounds (
+                        client_id,
+                        round_no,
+                        epsilon,
+                        accuracy,
+                        created_at
+                    )
+                    VALUES (%s, %s, %s, %s, %s)
+                    """,
+                    (client_id, round_no, float(epsilon), accuracy, datetime.utcnow()),
+                )
+            else:
+                cur.execute(
+                    """
+                    INSERT INTO training_rounds (
+                        client_id,
+                        round_no,
+                        epsilon,
+                        created_at
+                    )
+                    VALUES (%s, %s, %s, %s)
+                    """,
+                    (client_id, round_no, float(epsilon), datetime.utcnow()),
+                )
             conn.commit()
     finally:
         conn.close()

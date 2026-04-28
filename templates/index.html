@@ -95,6 +95,7 @@
         // ==================== STATE MANAGEMENT ====================
         let state = {
             uploadedFile: null,
+            uploadedFileId: null,
             fileType: null,
             chatHistory: [],
             theme: 'dark'
@@ -111,6 +112,23 @@
         const vizArea = document.getElementById("vizArea");
         const visualPreview = document.getElementById("visualPreview");
         const emptyState = document.getElementById("emptyState");
+
+        async function parseApiResponse(response) {
+            const rawText = await response.text();
+            let data = {};
+
+            try {
+                data = rawText ? JSON.parse(rawText) : {};
+            } catch (error) {
+                throw new Error(rawText || `Unexpected ${response.status} response from server.`);
+            }
+
+            if (!response.ok || data.status === "error") {
+                throw new Error(data.message || `Request failed with status ${response.status}.`);
+            }
+
+            return data;
+        }
 
         // ==================== THEME MANAGEMENT ====================
         const themeToggle = document.getElementById("themeToggle");
@@ -187,26 +205,27 @@
                     body: formData
                 });
 
-                const data = await response.json();
+                const data = await parseApiResponse(response);
                 removeTyping();
 
                 console.log("Upload response:", data);
 
-                if (data.status === "ok") {
-                    state.uploadedFile = data.saved_as;
-                    state.fileType = data.file_type;
+                if (data.status === "success") {
+                    state.uploadedFile = data.data.saved_filename;
+                    state.uploadedFileId = data.data.file_id;
+                    state.fileType = data.data.file_type;
                     
-                    const sizeKB = (data.size_bytes / 1024).toFixed(1);
-                    addMessage(`✅ **${data.original}** uploaded successfully! (${sizeKB} KB)`, "bot", true);
+                    const sizeKB = (data.data.file_size / 1024).toFixed(1);
+                    addMessage(`✅ **${data.data.original_filename}** uploaded successfully! (${sizeKB} KB)`, "bot", true);
                     
                     // Show action buttons
-                    displayActions(data.actions, data.original);
+                    displayActions(data.data.actions, data.data.original_filename);
                 } else {
                     addMessage(`❌ ${data.message || "Upload failed"}`, "bot");
                 }
             } catch (error) {
                 removeTyping();
-                addMessage("⚠️ Network error. Please check server.", "bot");
+                addMessage(error.message || "Upload failed. Please try again.", "bot");
                 console.error("Upload error:", error);
             }
         }
@@ -263,17 +282,18 @@
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
                         message: msg,
-                        filename: state.uploadedFile
+                        filename: state.uploadedFile,
+                        file_id: state.uploadedFileId
                     })
                 });
 
-                const data = await response.json();
+                const data = await parseApiResponse(response);
                 removeTyping();
 
-                addMessage(data.reply || "No response received.", "bot", true);
+                addMessage(data.data.reply || "No response received.", "bot", true);
             } catch (error) {
                 removeTyping();
-                addMessage("⚠️ Failed to send message. Please try again.", "bot");
+                addMessage(error.message || "Failed to send message. Please try again.", "bot");
                 console.error("Chat error:", error);
             }
         }
@@ -305,17 +325,18 @@
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
                         message: analysisMessage,
-                        filename: state.uploadedFile
+                        filename: state.uploadedFile,
+                        file_id: state.uploadedFileId
                     })
                 });
 
-                const data = await response.json();
+                const data = await parseApiResponse(response);
                 removeTyping();
 
-                addMessage(data.reply || "Analysis complete.", "bot", true);
+                addMessage(data.data.reply || "Analysis complete.", "bot", true);
             } catch (error) {
                 removeTyping();
-                addMessage("⚠️ Analysis failed. Please try again.", "bot");
+                addMessage(error.message || "Analysis failed. Please try again.", "bot");
                 console.error("Analysis error:", error);
             }
         }
@@ -336,13 +357,13 @@
                     const previewRes = await fetch(`/api/preview?filename=${encodeURIComponent(state.uploadedFile)}&rows=10`);
                     const previewData = await previewRes.json();
                     
-                    if (previewData.status === "ok") {
+                    if (previewData.status === "success") {
                         renderPreview(previewData);
                     }
                 }
 
                 // Get visualization data
-                const vizRes = await fetch("/api/vizdata");
+                const vizRes = await fetch(`/api/vizdata?filename=${encodeURIComponent(state.uploadedFile)}`);
                 const vizData = await vizRes.json();
                 
                 removeTyping();

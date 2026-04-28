@@ -16,10 +16,28 @@ const visualPreview = document.getElementById("visualPreview");
 // ---------- STATE MANAGEMENT ----------
 let state = {
     uploadedFile: null,
+    uploadedFileId: null,
     fileType: null,
     chatHistory: [],
     theme: 'dark'
 };
+
+async function parseApiResponse(response) {
+    const rawText = await response.text();
+    let data = {};
+
+    try {
+        data = rawText ? JSON.parse(rawText) : {};
+    } catch (error) {
+        throw new Error(rawText || `Unexpected ${response.status} response from server.`);
+    }
+
+    if (!response.ok || data.status === "error") {
+        throw new Error(data.message || `Request failed with status ${response.status}.`);
+    }
+
+    return data;
+}
 
 // ---------- THEME MANAGEMENT ----------
 function initTheme() {
@@ -118,26 +136,27 @@ async function handleFileUpload() {
             body: formData
         });
 
-        const data = await response.json();
+        const data = await parseApiResponse(response);
         removeTyping();
 
         console.log("Upload response:", data); // Debug log
 
-        if (data.status === "ok") {
-            state.uploadedFile = data.saved_as;
-            state.fileType = data.file_type;
+        if (data.status === "success") {
+            state.uploadedFile = data.data.saved_filename;
+            state.uploadedFileId = data.data.file_id;
+            state.fileType = data.data.file_type;
 
-            const sizeKB = (data.size_bytes / 1024).toFixed(1);
-            addMessage(`✅ **${data.original}** uploaded successfully! (${sizeKB} KB)`, "bot", { isHTML: true });
+            const sizeKB = (data.data.file_size / 1024).toFixed(1);
+            addMessage(`✅ **${data.data.original_filename}** uploaded successfully! (${sizeKB} KB)`, "bot", { isHTML: true });
 
             // Show available actions
-            displayActions(data.actions, data.original);
+            displayActions(data.data.actions, data.data.original_filename);
         } else {
             addMessage(`❌ Upload failed: ${data.message || "Unknown error"}`, "bot");
         }
     } catch (error) {
         removeTyping();
-        addMessage("⚠️ Network error. Please check if the server is running.", "bot");
+        addMessage(error.message || "Upload failed. Please try again.", "bot");
         console.error("Upload error:", error);
     }
 }
@@ -193,17 +212,16 @@ async function sendMessage() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 message: msg,
-                filename: state.uploadedFile
-            })
+                filename: state.uploadedFile, file_id: state.uploadedFileId })
         });
 
-        const data = await response.json();
+        const data = await parseApiResponse(response);
         removeTyping();
 
-        addMessage(data.reply || "No response received.", "bot", { isHTML: true });
+        addMessage(data.data.reply || "No response received.", "bot", { isHTML: true });
     } catch (error) {
         removeTyping();
-        addMessage("⚠️ Failed to send message. Please try again.", "bot");
+        addMessage(error.message || "Failed to send message. Please try again.", "bot");
         console.error("Chat error:", error);
     }
 }
@@ -258,17 +276,16 @@ async function startAnalysis(type) {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 message: analysisMessage,
-                filename: state.uploadedFile
-            })
+                filename: state.uploadedFile, file_id: state.uploadedFileId })
         });
 
-        const data = await response.json();
+        const data = await parseApiResponse(response);
         removeTyping();
 
-        addMessage(data.reply || "Analysis complete.", "bot", { isHTML: true });
+        addMessage(data.data.reply || "Analysis complete.", "bot", { isHTML: true });
     } catch (error) {
         removeTyping();
-        addMessage("⚠️ Analysis failed. Please try again.", "bot");
+        addMessage(error.message || "Analysis failed. Please try again.", "bot");
         console.error("Analysis error:", error);
     }
 }
@@ -445,3 +462,4 @@ document.addEventListener('DOMContentLoaded', () => {
 window.startAnalysis = startAnalysis;
 window.openVisualization = openVisualization;
 window.clearChat = clearChat;
+

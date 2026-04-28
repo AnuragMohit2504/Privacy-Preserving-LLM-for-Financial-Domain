@@ -1,5 +1,8 @@
-#audit.py 
-from db.postgres import get_connection
+#audit.py
+try:
+    from .postgres import get_connection
+except ImportError:
+    from db.postgres import get_connection
 from datetime import datetime
 
 def log_action(action: str, detail: str = None):
